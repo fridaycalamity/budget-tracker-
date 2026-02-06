@@ -4,6 +4,7 @@ import { Dashboard } from './Dashboard';
 import { BudgetProvider } from '../contexts/BudgetContext';
 import { ToastProvider } from '../contexts/ToastContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
+import { CategoryProvider } from '../contexts/CategoryContext';
 import * as storage from '../utils/storage';
 import type { Transaction } from '../types';
 
@@ -22,6 +23,10 @@ vi.mock('../utils/storage', () => ({
     getTheme: vi.fn(() => 'light'),
     saveTheme: vi.fn(),
     clearAll: vi.fn(),
+    getCategories: vi.fn(() => []),
+    saveCategories: vi.fn(),
+    getMigrationFlag: vi.fn(() => true),
+    setMigrationFlag: vi.fn(),
   },
 }));
 
@@ -30,9 +35,11 @@ function renderDashboard() {
   return render(
     <ThemeProvider>
       <ToastProvider>
-        <BudgetProvider>
-          <Dashboard />
-        </BudgetProvider>
+        <CategoryProvider>
+          <BudgetProvider>
+            <Dashboard />
+          </BudgetProvider>
+        </CategoryProvider>
       </ToastProvider>
     </ThemeProvider>
   );

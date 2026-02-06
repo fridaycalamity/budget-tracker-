@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TransactionModal } from './TransactionModal';
-import { BudgetProvider, ToastProvider, useBudget } from '../contexts';
+import { BudgetProvider, ToastProvider, CategoryProvider, useBudget } from '../contexts';
 
 /**
  * Integration test for TransactionModal with real TransactionForm
@@ -38,9 +38,11 @@ describe('TransactionModal Integration', () => {
     
     render(
       <ToastProvider>
-        <BudgetProvider>
-          <TestWrapper />
-        </BudgetProvider>
+        <CategoryProvider>
+          <CategoryProvider><BudgetProvider>
+            <TestWrapper />
+          </BudgetProvider></CategoryProvider>
+        </CategoryProvider>
       </ToastProvider>
     );
 
@@ -83,9 +85,9 @@ describe('TransactionModal Integration', () => {
     
     render(
       <ToastProvider>
-        <BudgetProvider>
+        <CategoryProvider><BudgetProvider>
           <TestWrapper />
-        </BudgetProvider>
+        </BudgetProvider></CategoryProvider>
       </ToastProvider>
     );
 
@@ -114,9 +116,9 @@ describe('TransactionModal Integration', () => {
     
     render(
       <ToastProvider>
-        <BudgetProvider>
+        <CategoryProvider><BudgetProvider>
           <TestWrapper />
-        </BudgetProvider>
+        </BudgetProvider></CategoryProvider>
       </ToastProvider>
     );
 
@@ -142,9 +144,9 @@ describe('TransactionModal Integration', () => {
     
     render(
       <ToastProvider>
-        <BudgetProvider>
+        <CategoryProvider><BudgetProvider>
           <TestWrapper />
-        </BudgetProvider>
+        </BudgetProvider></CategoryProvider>
       </ToastProvider>
     );
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TransactionModal } from './TransactionModal';
-import { BudgetProvider, ToastProvider } from '../contexts';
+import { BudgetProvider, ToastProvider, CategoryProvider } from '../contexts';
 
 /**
  * Test suite for TransactionModal component
@@ -45,9 +45,11 @@ describe('TransactionModal', () => {
   const renderModal = (isOpen: boolean) => {
     return render(
       <ToastProvider>
-        <BudgetProvider>
-          <TransactionModal isOpen={isOpen} onClose={mockOnClose} />
-        </BudgetProvider>
+        <CategoryProvider>
+          <BudgetProvider>
+            <TransactionModal isOpen={isOpen} onClose={mockOnClose} />
+          </BudgetProvider>
+        </CategoryProvider>
       </ToastProvider>
     );
   };

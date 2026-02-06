@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBudget } from '../contexts';
+import { CategoryManager } from '../components';
 
 /**
  * Settings page
@@ -80,6 +81,9 @@ export function Settings() {
           </div>
         </div>
       )}
+
+      {/* Category Management Section */}
+      <CategoryManager />
 
       {/* Data Management Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-4">

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Settings } from './Settings';
-import { BudgetProvider, ToastProvider } from '../contexts';
+import { BudgetProvider, ToastProvider, CategoryProvider } from '../contexts';
 
 /**
  * Test suite for Settings page component
@@ -13,9 +13,11 @@ import { BudgetProvider, ToastProvider } from '../contexts';
 function renderSettings() {
   return render(
     <ToastProvider>
-      <BudgetProvider>
-        <Settings />
-      </BudgetProvider>
+      <CategoryProvider>
+        <BudgetProvider>
+          <Settings />
+        </BudgetProvider>
+      </CategoryProvider>
     </ToastProvider>
   );
 }
@@ -186,7 +188,7 @@ describe('Settings', () => {
         description: 'Test transaction',
         amount: 100,
         type: 'expense',
-        category: 'Food',
+        category: '550e8400-e29b-41d4-a716-446655440001', // Food category ID
         date: '2024-01-01',
         createdAt: '2024-01-01T00:00:00.000Z',
       },

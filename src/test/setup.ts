@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import '@testing-library/jest-dom';
-import { beforeEach } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 
 // Mock localStorage for tests
 const localStorageMock = {
@@ -27,6 +27,66 @@ const localStorageMock = {
 };
 
 (globalThis as any).localStorage = localStorageMock;
+
+// Mock ResizeObserver for Chart.js
+(globalThis as any).ResizeObserver = class ResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+};
+
+// Mock HTMLCanvasElement for Chart.js tests
+class MockCanvasRenderingContext2D {
+  fillRect = vi.fn();
+  clearRect = vi.fn();
+  getImageData = vi.fn();
+  putImageData = vi.fn();
+  createImageData = vi.fn();
+  setTransform = vi.fn();
+  resetTransform = vi.fn();
+  drawImage = vi.fn();
+  save = vi.fn();
+  fillText = vi.fn();
+  restore = vi.fn();
+  beginPath = vi.fn();
+  moveTo = vi.fn();
+  lineTo = vi.fn();
+  closePath = vi.fn();
+  stroke = vi.fn();
+  translate = vi.fn();
+  scale = vi.fn();
+  rotate = vi.fn();
+  arc = vi.fn();
+  fill = vi.fn();
+  measureText = vi.fn(() => ({ width: 0 }));
+  transform = vi.fn();
+  rect = vi.fn();
+  clip = vi.fn();
+  canvas = {
+    width: 500,
+    height: 500,
+    style: {},
+    getContext: vi.fn(),
+    ownerDocument: document,
+  };
+}
+
+HTMLCanvasElement.prototype.getContext = vi.fn(function(this: HTMLCanvasElement) {
+  const ctx = new MockCanvasRenderingContext2D();
+  ctx.canvas = this as any;
+  return ctx as any;
+}) as any;
+
+// Mock canvas dimensions
+Object.defineProperty(HTMLCanvasElement.prototype, 'width', {
+  get: () => 500,
+  set: vi.fn(),
+});
+
+Object.defineProperty(HTMLCanvasElement.prototype, 'height', {
+  get: () => 500,
+  set: vi.fn(),
+});
 
 // Clear localStorage before each test
 beforeEach(() => {

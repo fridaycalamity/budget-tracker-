@@ -1,9 +1,27 @@
 import { format, parseISO } from 'date-fns';
-import type { Transaction, FinancialSummary, TransactionCategory, TransactionFilters, SortConfig } from '../types';
+import type { Transaction, FinancialSummary, TransactionFilters, SortConfig } from '../types';
 
 // Re-export storage service and seed data generator
 export { storageService } from './storage';
 export { generateSeedData } from './seedData';
+
+// Re-export category utilities
+export {
+  validateCategory,
+  isCategoryNameUnique,
+  getCategoryColor,
+  getCategoryIcon,
+  getCategoryName,
+  reassignTransactions,
+  countTransactionsByCategory,
+} from './categoryValidation';
+
+export {
+  needsMigration,
+  migrateTransactions,
+  mapLegacyCategoryToId,
+  initializeDefaultCategories,
+} from './categoryMigration';
 
 /**
  * Formats a number as Philippine Peso currency
@@ -142,19 +160,8 @@ export function calculateSummary(transactions: Transaction[]): FinancialSummary 
   let totalIncome = 0;
   let totalExpenses = 0;
   
-  // Initialize expenses by category with all categories set to 0
-  const expensesByCategory: Record<TransactionCategory, number> = {
-    Food: 0,
-    Transport: 0,
-    Bills: 0,
-    Entertainment: 0,
-    Salary: 0,
-    Freelance: 0,
-    Shopping: 0,
-    Healthcare: 0,
-    Education: 0,
-    Other: 0,
-  };
+  // Initialize expenses by category (dynamic based on transactions)
+  const expensesByCategory: Record<string, number> = {};
   
   // Process each transaction
   for (const transaction of transactions) {
@@ -162,7 +169,10 @@ export function calculateSummary(transactions: Transaction[]): FinancialSummary 
       totalIncome += transaction.amount;
     } else if (transaction.type === 'expense') {
       totalExpenses += transaction.amount;
-      // Add to category total
+      // Add to category total (initialize if not exists)
+      if (!expensesByCategory[transaction.category]) {
+        expensesByCategory[transaction.category] = 0;
+      }
       expensesByCategory[transaction.category] += transaction.amount;
     }
   }
@@ -356,22 +366,11 @@ export function validateTransaction(data: Partial<Transaction>): { isValid: bool
   }
   
   // Validate category
-  const validCategories: TransactionCategory[] = [
-    'Food',
-    'Transport',
-    'Bills',
-    'Entertainment',
-    'Salary',
-    'Freelance',
-    'Shopping',
-    'Healthcare',
-    'Education',
-    'Other',
-  ];
-  
+  // Note: Category validation will be done against actual category IDs
+  // in the CategoryContext when creating transactions
   if (!data.category) {
     errors.category = 'Category is required';
-  } else if (!validCategories.includes(data.category)) {
+  } else if (typeof data.category !== 'string' || data.category.trim().length === 0) {
     errors.category = 'Invalid category';
   }
   

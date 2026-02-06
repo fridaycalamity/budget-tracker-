@@ -2,7 +2,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FilterBar } from './FilterBar';
+import { CategoryProvider } from '../contexts';
 import type { TransactionFilters } from '../types';
+
+// Helper to render with CategoryProvider
+const renderWithProvider = (ui: React.ReactElement) => {
+  return render(<CategoryProvider>{ui}</CategoryProvider>);
+};
 
 describe('FilterBar', () => {
   const defaultFilters: TransactionFilters = {
@@ -16,7 +22,7 @@ describe('FilterBar', () => {
 
   it('renders all filter controls', () => {
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     // Check for filter labels
     expect(screen.getByText('Filters')).toBeInTheDocument();
@@ -27,20 +33,21 @@ describe('FilterBar', () => {
   });
 
   it('displays current filter values', () => {
+    // Use a UUID for the category (Salary category ID)
     const filters: TransactionFilters = {
       type: 'income',
-      category: 'Salary',
+      category: '550e8400-e29b-41d4-a716-446655440005', // Salary category ID
       dateRange: {
         start: '2024-01-01',
         end: '2024-01-31',
       },
     };
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
 
     // Check that values are displayed
     expect(screen.getByLabelText('Filter by transaction type')).toHaveValue('income');
-    expect(screen.getByLabelText('Filter by category')).toHaveValue('Salary');
+    expect(screen.getByLabelText('Filter by category')).toHaveValue('550e8400-e29b-41d4-a716-446655440005');
     expect(screen.getByLabelText('Filter by start date')).toHaveValue('2024-01-01');
     expect(screen.getByLabelText('Filter by end date')).toHaveValue('2024-01-31');
   });
@@ -48,7 +55,7 @@ describe('FilterBar', () => {
   it('calls onFiltersChange when type filter changes', async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const typeSelect = screen.getByLabelText('Filter by transaction type');
     await user.selectOptions(typeSelect, 'income');
@@ -62,21 +69,26 @@ describe('FilterBar', () => {
   it('calls onFiltersChange when category filter changes', async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const categorySelect = screen.getByLabelText('Filter by category');
-    await user.selectOptions(categorySelect, 'Food');
+    // Get the Food category option (first non-"all" option with Food in text)
+    const foodOption = Array.from(categorySelect.querySelectorAll('option')).find(
+      (opt) => opt.textContent?.includes('Food')
+    );
+    
+    await user.selectOptions(categorySelect, foodOption!.value);
 
     expect(onFiltersChange).toHaveBeenCalledWith({
       ...defaultFilters,
-      category: 'Food',
+      category: foodOption!.value,
     });
   });
 
   it('calls onFiltersChange when start date changes', async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const startDateInput = screen.getByLabelText('Filter by start date');
     await user.type(startDateInput, '2024-01-01');
@@ -93,7 +105,7 @@ describe('FilterBar', () => {
   it('calls onFiltersChange when end date changes', async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const endDateInput = screen.getByLabelText('Filter by end date');
     await user.type(endDateInput, '2024-01-31');
@@ -117,14 +129,14 @@ describe('FilterBar', () => {
       },
     };
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
 
     expect(screen.getByText('Clear All')).toBeInTheDocument();
   });
 
   it('does not show "Clear All" button when no filters are active', () => {
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     expect(screen.queryByText('Clear All')).not.toBeInTheDocument();
   });
@@ -140,7 +152,7 @@ describe('FilterBar', () => {
       },
     };
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
 
     const clearButton = screen.getByText('Clear All');
     await user.click(clearButton);
@@ -157,29 +169,30 @@ describe('FilterBar', () => {
 
   it('includes all transaction categories in category dropdown', () => {
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const categorySelect = screen.getByLabelText('Filter by category');
-    const options = Array.from(categorySelect.querySelectorAll('option')).map(
-      (option) => option.value
+    const optionTexts = Array.from(categorySelect.querySelectorAll('option')).map(
+      (option) => option.textContent || ''
     );
 
-    expect(options).toContain('all');
-    expect(options).toContain('Food');
-    expect(options).toContain('Transport');
-    expect(options).toContain('Bills');
-    expect(options).toContain('Entertainment');
-    expect(options).toContain('Salary');
-    expect(options).toContain('Freelance');
-    expect(options).toContain('Shopping');
-    expect(options).toContain('Healthcare');
-    expect(options).toContain('Education');
-    expect(options).toContain('Other');
+    // Check that all category names appear in the dropdown (with icons)
+    expect(optionTexts.some(text => text.includes('All Categories'))).toBe(true);
+    expect(optionTexts.some(text => text.includes('Food'))).toBe(true);
+    expect(optionTexts.some(text => text.includes('Transport'))).toBe(true);
+    expect(optionTexts.some(text => text.includes('Bills'))).toBe(true);
+    expect(optionTexts.some(text => text.includes('Entertainment'))).toBe(true);
+    expect(optionTexts.some(text => text.includes('Salary'))).toBe(true);
+    expect(optionTexts.some(text => text.includes('Freelance'))).toBe(true);
+    expect(optionTexts.some(text => text.includes('Shopping'))).toBe(true);
+    expect(optionTexts.some(text => text.includes('Healthcare'))).toBe(true);
+    expect(optionTexts.some(text => text.includes('Education'))).toBe(true);
+    expect(optionTexts.some(text => text.includes('Other'))).toBe(true);
   });
 
   it('includes all type options in type dropdown', () => {
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const typeSelect = screen.getByLabelText('Filter by transaction type');
     const options = Array.from(typeSelect.querySelectorAll('option')).map(
@@ -200,7 +213,7 @@ describe('FilterBar', () => {
       },
     };
     const onFiltersChange = vi.fn();
-    render(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
+    renderWithProvider(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
 
     const startDateInput = screen.getByLabelText('Filter by start date');
     await user.clear(startDateInput);

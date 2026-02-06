@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ToastProvider } from '../contexts/ToastContext';
 import { BudgetProvider } from '../contexts/BudgetContext';
+import { CategoryProvider } from '../contexts/CategoryContext';
 import { ToastContainer } from './ToastContainer';
 import { TransactionForm } from './TransactionForm';
 
@@ -16,10 +17,12 @@ describe('Toast Integration', () => {
 
     render(
       <ToastProvider>
-        <BudgetProvider>
-          <TransactionForm />
-          <ToastContainer />
-        </BudgetProvider>
+        <CategoryProvider>
+          <BudgetProvider>
+            <TransactionForm />
+            <ToastContainer />
+          </BudgetProvider>
+        </CategoryProvider>
       </ToastProvider>
     );
 
@@ -45,10 +48,12 @@ describe('Toast Integration', () => {
 
     render(
       <ToastProvider>
-        <BudgetProvider>
-          <TransactionForm />
-          <ToastContainer />
-        </BudgetProvider>
+        <CategoryProvider>
+          <BudgetProvider>
+            <TransactionForm />
+            <ToastContainer />
+          </BudgetProvider>
+        </CategoryProvider>
       </ToastProvider>
     );
 
@@ -67,10 +72,12 @@ describe('Toast Integration', () => {
 
     render(
       <ToastProvider>
-        <BudgetProvider>
-          <TransactionForm />
-          <ToastContainer />
-        </BudgetProvider>
+        <CategoryProvider>
+          <BudgetProvider>
+            <TransactionForm />
+            <ToastContainer />
+          </BudgetProvider>
+        </CategoryProvider>
       </ToastProvider>
     );
 
@@ -98,10 +105,12 @@ describe('Toast Integration', () => {
 
     render(
       <ToastProvider>
-        <BudgetProvider>
-          <TransactionForm />
-          <ToastContainer />
-        </BudgetProvider>
+        <CategoryProvider>
+          <BudgetProvider>
+            <TransactionForm />
+            <ToastContainer />
+          </BudgetProvider>
+        </CategoryProvider>
       </ToastProvider>
     );
 
@@ -133,10 +142,12 @@ describe('Toast Integration', () => {
 
     render(
       <ToastProvider>
-        <BudgetProvider>
-          <TransactionForm />
-          <ToastContainer />
-        </BudgetProvider>
+        <CategoryProvider>
+          <BudgetProvider>
+            <TransactionForm />
+            <ToastContainer />
+          </BudgetProvider>
+        </CategoryProvider>
       </ToastProvider>
     );
 

@@ -1,9 +1,8 @@
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-import { useBudget } from '../contexts';
+import { useBudget, useCategories } from '../contexts';
 import { useTheme } from '../contexts/ThemeContext';
-import { formatCurrency } from '../utils';
-import type { TransactionCategory } from '../types';
+import { formatCurrency, getCategoryColor, getCategoryName, getCategoryIcon } from '../utils';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -17,28 +16,18 @@ ChartJS.register(ArcElement, Tooltip, Legend);
  */
 export function SpendingChart() {
   const { summary } = useBudget();
+  const { categories } = useCategories();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-
-  // Define colors for each category (distinct, accessible colors)
-  const categoryColors: Record<TransactionCategory, string> = {
-    Food: '#ef4444', // red-500
-    Transport: '#3b82f6', // blue-500
-    Bills: '#f59e0b', // amber-500
-    Entertainment: '#8b5cf6', // violet-500
-    Salary: '#10b981', // emerald-500
-    Freelance: '#06b6d4', // cyan-500
-    Shopping: '#ec4899', // pink-500
-    Healthcare: '#14b8a6', // teal-500
-    Education: '#6366f1', // indigo-500
-    Other: '#6b7280', // gray-500
-  };
 
   // Filter out categories with zero expenses and prepare chart data
   const categoriesWithExpenses = Object.entries(summary.expensesByCategory)
     .filter(([, amount]) => (amount as number) > 0)
-    .map(([category, amount]) => ({
-      category: category as TransactionCategory,
+    .map(([categoryId, amount]) => ({
+      categoryId,
+      categoryName: getCategoryName(categoryId, categories),
+      categoryIcon: getCategoryIcon(categoryId, categories),
+      categoryColor: getCategoryColor(categoryId, categories),
       amount: amount as number,
     }));
 
@@ -82,12 +71,12 @@ export function SpendingChart() {
 
   // Prepare data for Chart.js
   const chartData = {
-    labels: categoriesWithExpenses.map((item) => item.category),
+    labels: categoriesWithExpenses.map((item) => `${item.categoryIcon} ${item.categoryName}`),
     datasets: [
       {
         label: 'Expenses',
         data: categoriesWithExpenses.map((item) => item.amount),
-        backgroundColor: categoriesWithExpenses.map((item) => categoryColors[item.category]),
+        backgroundColor: categoriesWithExpenses.map((item) => item.categoryColor),
         borderColor: categoriesWithExpenses.map(() => isDark ? '#1f2937' : '#ffffff'),
         borderWidth: 2,
         hoverOffset: 4,

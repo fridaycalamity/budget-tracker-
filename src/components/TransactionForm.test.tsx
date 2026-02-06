@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TransactionForm } from './TransactionForm';
-import { BudgetProvider, ToastProvider } from '../contexts';
+import { BudgetProvider, ToastProvider, CategoryProvider } from '../contexts';
 
 // Helper to render component with context
 const renderWithContext = (ui: React.ReactElement) => {
   return render(
     <ToastProvider>
-      <BudgetProvider>{ui}</BudgetProvider>
+      <CategoryProvider>
+        <BudgetProvider>{ui}</BudgetProvider>
+      </CategoryProvider>
     </ToastProvider>
   );
 };
@@ -156,16 +158,12 @@ describe('TransactionForm', () => {
 
     const categorySelect = screen.getByLabelText(/category/i) as HTMLSelectElement;
 
-    // Default is 'Other'
-    expect(categorySelect.value).toBe('Other');
+    // Default should be 'Other' - check the selected option text
+    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+    expect(selectedOption.text).toContain('Other');
 
-    // Change to 'Food'
-    fireEvent.change(categorySelect, { target: { value: 'Food' } });
-    expect(categorySelect.value).toBe('Food');
-
-    // Change to 'Transport'
-    fireEvent.change(categorySelect, { target: { value: 'Transport' } });
-    expect(categorySelect.value).toBe('Transport');
+    // The value should be a UUID
+    expect(categorySelect.value).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   });
 
   it('successfully submits valid form and clears fields', async () => {
@@ -181,7 +179,8 @@ describe('TransactionForm', () => {
     fireEvent.change(descriptionInput, { target: { value: 'Monthly Salary' } });
     fireEvent.change(amountInput, { target: { value: '50000' } });
     fireEvent.click(incomeRadio);
-    fireEvent.change(categorySelect, { target: { value: 'Salary' } });
+    // Use the Salary category UUID instead of string
+    fireEvent.change(categorySelect, { target: { value: '550e8400-e29b-41d4-a716-446655440005' } });
 
     // Submit the form
     const submitButton = screen.getByRole('button', { name: /add transaction/i });
@@ -196,7 +195,9 @@ describe('TransactionForm', () => {
     expect((descriptionInput as HTMLInputElement).value).toBe('');
     expect((amountInput as HTMLInputElement).value).toBe('');
     expect((screen.getByLabelText(/expense/i) as HTMLInputElement).checked).toBe(true);
-    expect((categorySelect as HTMLSelectElement).value).toBe('Other');
+    // Category should be reset to Other (check by text content)
+    const selectedOption = (categorySelect as HTMLSelectElement).options[(categorySelect as HTMLSelectElement).selectedIndex];
+    expect(selectedOption.text).toContain('Other');
   });
 
   it('trims whitespace from description', async () => {

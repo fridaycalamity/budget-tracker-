@@ -1,7 +1,6 @@
-import { useState, type FormEvent, type ChangeEvent } from 'react';
+import { useState, useMemo, type FormEvent, type ChangeEvent } from 'react';
 import { format } from 'date-fns';
-import { useBudget } from '../contexts';
-import type { TransactionCategory } from '../types';
+import { useBudget, useCategories } from '../contexts';
 
 /**
  * TransactionForm component
@@ -11,26 +10,12 @@ import type { TransactionCategory } from '../types';
  * - Description input (required, max 200 characters)
  * - Amount input (positive numbers only)
  * - Type selector (income/expense radio buttons)
- * - Category dropdown (all categories)
+ * - Category dropdown (dynamic categories from CategoryContext)
  * - Date picker (defaults to current date)
  * - Form validation with error display
  * - Form submission handling
  * - Auto-clear after successful submission
  */
-
-// All available transaction categories
-const CATEGORIES: TransactionCategory[] = [
-  'Food',
-  'Transport',
-  'Bills',
-  'Entertainment',
-  'Salary',
-  'Freelance',
-  'Shopping',
-  'Healthcare',
-  'Education',
-  'Other',
-];
 
 interface TransactionFormProps {
   onSuccess?: () => void; // Optional callback after successful submission
@@ -38,13 +23,28 @@ interface TransactionFormProps {
 
 export function TransactionForm({ onSuccess }: TransactionFormProps) {
   const { addTransaction } = useBudget();
+  const { getCategoriesByType } = useCategories();
 
   // Form state
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'income' | 'expense'>('expense');
-  const [category, setCategory] = useState<TransactionCategory>('Other');
+  const [category, setCategory] = useState('');
   const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+
+  // Get filtered categories based on transaction type
+  const availableCategories = useMemo(() => {
+    return getCategoriesByType(type);
+  }, [type, getCategoriesByType]);
+
+  // Set default category when type changes or categories load
+  useMemo(() => {
+    if (availableCategories.length > 0 && !category) {
+      // Find "Other" category or use first available
+      const otherCategory = availableCategories.find(cat => cat.name === 'Other');
+      setCategory(otherCategory?.id || availableCategories[0].id);
+    }
+  }, [availableCategories, category]);
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -130,7 +130,9 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
       setDescription('');
       setAmount('');
       setType('expense');
-      setCategory('Other');
+      // Reset to default category
+      const otherCategory = availableCategories.find(cat => cat.name === 'Other');
+      setCategory(otherCategory?.id || availableCategories[0]?.id || '');
       setDate(format(new Date(), 'yyyy-MM-dd'));
       setErrors({});
 
@@ -196,16 +198,23 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
 
   /**
    * Handles type change (income/expense)
+   * Updates available categories when type changes
    */
   const handleTypeChange = (newType: 'income' | 'expense') => {
     setType(newType);
+    // Reset category to first available for new type
+    const newCategories = getCategoriesByType(newType);
+    if (newCategories.length > 0) {
+      const otherCategory = newCategories.find(cat => cat.name === 'Other');
+      setCategory(otherCategory?.id || newCategories[0].id);
+    }
   };
 
   /**
    * Handles category change
    */
   const handleCategoryChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setCategory(e.target.value as TransactionCategory);
+    setCategory(e.target.value);
   };
 
   /**
@@ -318,9 +327,9 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
           onChange={handleCategoryChange}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
         >
-          {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
+          {availableCategories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.icon} {cat.name}
             </option>
           ))}
         </select>

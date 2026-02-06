@@ -1,4 +1,4 @@
-import type { Transaction, BudgetGoal, StorageService } from '../types';
+import type { Transaction, BudgetGoal, StorageService, Category } from '../types';
 
 /**
  * Storage keys for localStorage
@@ -8,6 +8,8 @@ const STORAGE_KEYS = {
   TRANSACTIONS: 'budget_tracker_transactions',
   BUDGET_GOAL: 'budget_tracker_budget_goal',
   THEME: 'budget_tracker_theme',
+  CATEGORIES: 'budget_tracker_categories',
+  MIGRATION_FLAG: 'budget_tracker_migrated',
 } as const;
 
 /**
@@ -180,11 +182,94 @@ export const storageService: StorageService = {
     try {
       localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
       localStorage.removeItem(STORAGE_KEYS.BUDGET_GOAL);
+      localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+      localStorage.removeItem(STORAGE_KEYS.MIGRATION_FLAG);
       // Note: We intentionally don't remove theme preference
       // as users typically want to keep their theme choice
       // even when clearing financial data
     } catch (error) {
       console.error('Error clearing data from localStorage:', error);
+    }
+  },
+
+  /**
+   * Retrieves custom categories from localStorage
+   * @returns Array of custom categories, or empty array if none exist or on error
+   * 
+   * @example
+   * const categories = storageService.getCategories();
+   * console.log(categories); // [{ id: '...', name: 'Groceries', ... }]
+   */
+  getCategories(): Category[] {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      if (!data) {
+        return [];
+      }
+      
+      const parsed = JSON.parse(data);
+      
+      // Validate that parsed data is an array
+      if (!Array.isArray(parsed)) {
+        console.error('Invalid categories data in localStorage: expected array');
+        return [];
+      }
+      
+      return parsed;
+    } catch (error) {
+      console.error('Error reading categories from localStorage:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Saves custom categories array to localStorage
+   * @param categories - Array of custom categories to persist
+   * 
+   * @example
+   * storageService.saveCategories([
+   *   { id: '1', name: 'Groceries', icon: '🛒', color: '#10b981', type: 'expense', isDefault: false }
+   * ]);
+   */
+  saveCategories(categories: Category[]): void {
+    try {
+      const data = JSON.stringify(categories);
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, data);
+    } catch (error) {
+      console.error('Error saving categories to localStorage:', error);
+    }
+  },
+
+  /**
+   * Retrieves migration flag from localStorage
+   * @returns true if migration has been completed, false otherwise
+   * 
+   * @example
+   * const migrated = storageService.getMigrationFlag();
+   * console.log(migrated); // true or false
+   */
+  getMigrationFlag(): boolean {
+    try {
+      const flag = localStorage.getItem(STORAGE_KEYS.MIGRATION_FLAG);
+      return flag === 'true';
+    } catch (error) {
+      console.error('Error reading migration flag from localStorage:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Sets migration flag in localStorage
+   * @param migrated - true if migration is complete, false otherwise
+   * 
+   * @example
+   * storageService.setMigrationFlag(true);
+   */
+  setMigrationFlag(migrated: boolean): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.MIGRATION_FLAG, migrated ? 'true' : 'false');
+    } catch (error) {
+      console.error('Error saving migration flag to localStorage:', error);
     }
   },
 };

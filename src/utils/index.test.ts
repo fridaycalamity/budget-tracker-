@@ -214,8 +214,7 @@ describe('calculateSummary', () => {
       expect(result.totalIncome).toBe(0);
       expect(result.totalExpenses).toBe(0);
       expect(result.balance).toBe(0);
-      expect(result.expensesByCategory.Food).toBe(0);
-      expect(result.expensesByCategory.Transport).toBe(0);
+      expect(Object.keys(result.expensesByCategory).length).toBe(0);
     });
 
     it('should calculate total income correctly', () => {
@@ -269,24 +268,15 @@ describe('calculateSummary', () => {
       
       const result = calculateSummary(transactions);
       
-      expect(result.expensesByCategory.Food).toBe(1500);
-      expect(result.expensesByCategory.Transport).toBe(300);
-      expect(result.expensesByCategory.Bills).toBe(0);
+      expect(result.expensesByCategory['Food']).toBe(1500);
+      expect(result.expensesByCategory['Transport']).toBe(300);
+      expect(result.expensesByCategory['Bills']).toBeUndefined();
     });
 
-    it('should initialize all categories to zero', () => {
+    it('should only include categories with expenses', () => {
       const result = calculateSummary([]);
       
-      expect(result.expensesByCategory.Food).toBe(0);
-      expect(result.expensesByCategory.Transport).toBe(0);
-      expect(result.expensesByCategory.Bills).toBe(0);
-      expect(result.expensesByCategory.Entertainment).toBe(0);
-      expect(result.expensesByCategory.Salary).toBe(0);
-      expect(result.expensesByCategory.Freelance).toBe(0);
-      expect(result.expensesByCategory.Shopping).toBe(0);
-      expect(result.expensesByCategory.Healthcare).toBe(0);
-      expect(result.expensesByCategory.Education).toBe(0);
-      expect(result.expensesByCategory.Other).toBe(0);
+      expect(Object.keys(result.expensesByCategory).length).toBe(0);
     });
 
     it('should not include income in category totals', () => {
@@ -298,11 +288,11 @@ describe('calculateSummary', () => {
       
       const result = calculateSummary(transactions);
       
-      // Income categories should be zero in expensesByCategory
-      expect(result.expensesByCategory.Salary).toBe(0);
-      expect(result.expensesByCategory.Freelance).toBe(0);
+      // Income categories should not be in expensesByCategory
+      expect(result.expensesByCategory['Salary']).toBeUndefined();
+      expect(result.expensesByCategory['Freelance']).toBeUndefined();
       // Only expense categories should have values
-      expect(result.expensesByCategory.Food).toBe(1000);
+      expect(result.expensesByCategory['Food']).toBe(1000);
     });
 
     it('should handle all expense categories', () => {
@@ -1527,7 +1517,7 @@ describe('validateTransaction', () => {
         description: 'Test transaction',
         amount: 1000,
         type: 'income' as const,
-        category: 'InvalidCategory' as any,
+        category: '   ', // Whitespace only
         date: '2024-01-15',
       };
       
@@ -1537,21 +1527,14 @@ describe('validateTransaction', () => {
       expect(result.errors.category).toBe('Invalid category');
     });
 
-    it('should accept all valid categories', () => {
-      const validCategories = [
-        'Food',
-        'Transport',
-        'Bills',
-        'Entertainment',
-        'Salary',
-        'Freelance',
-        'Shopping',
-        'Healthcare',
-        'Education',
-        'Other',
+    it('should accept all valid category IDs', () => {
+      const validCategoryIds = [
+        '550e8400-e29b-41d4-a716-446655440001', // UUID format
+        'custom-category-id',
+        'any-string-id',
       ];
       
-      validCategories.forEach(category => {
+      validCategoryIds.forEach(category => {
         const data = {
           description: 'Test transaction',
           amount: 1000,
@@ -1695,7 +1678,7 @@ describe('validateTransaction', () => {
         description: '',
         amount: -100,
         type: 'invalid' as any,
-        category: 'InvalidCategory' as any,
+        category: '', // Empty category
         date: 'invalid-date',
       };
       

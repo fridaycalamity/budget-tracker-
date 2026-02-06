@@ -14,3 +14,5 @@ export { ToastContainer } from './ToastContainer';
 export { BudgetProgress } from './BudgetProgress';
 export { LoadingSpinner } from './LoadingSpinner';
 export { SkeletonLoader } from './SkeletonLoader';
+export { CategoryManager } from './CategoryManager';
+export { CategoryForm } from './CategoryForm';

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { formatCurrency, formatDate } from '../utils';
+import { formatCurrency, formatDate, getCategoryName, getCategoryIcon, getCategoryColor } from '../utils';
+import { useCategories } from '../contexts';
 import type { Transaction } from '../types';
 
 interface TransactionRowProps {
@@ -12,9 +13,15 @@ interface TransactionRowProps {
  * Displays a single transaction with date, description, category, and amount
  * Includes delete button with confirmation
  * Color-coded by transaction type (green for income, red for expense)
+ * Shows category icon and color badge
  */
 export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
+  const { categories } = useCategories();
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const categoryName = getCategoryName(transaction.category, categories);
+  const categoryIcon = getCategoryIcon(transaction.category, categories);
+  const categoryColor = getCategoryColor(transaction.category, categories);
 
   const handleDeleteClick = () => {
     setShowConfirm(true);
@@ -49,9 +56,16 @@ export function TransactionRow({ transaction, onDelete }: TransactionRowProps) {
             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {transaction.description}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {transaction.category}
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: categoryColor }}
+                aria-label="Category color"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {categoryIcon} {categoryName}
+              </p>
+            </div>
           </div>
 
           {/* Amount */}

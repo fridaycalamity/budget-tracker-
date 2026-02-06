@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SpendingChart } from './SpendingChart';
-import { BudgetProvider, ToastProvider, ThemeProvider } from '../contexts';
+import { BudgetProvider, ToastProvider, ThemeProvider, CategoryProvider } from '../contexts';
 import { storageService } from '../utils';
 
 // Helper to render with providers
@@ -9,7 +9,9 @@ const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <ThemeProvider>
       <ToastProvider>
-        <BudgetProvider>{ui}</BudgetProvider>
+        <CategoryProvider>
+          <BudgetProvider>{ui}</BudgetProvider>
+        </CategoryProvider>
       </ToastProvider>
     </ThemeProvider>
   );
@@ -30,14 +32,14 @@ describe('SpendingChart', () => {
   });
 
   it('should render chart title', () => {
-    // Add some test data
+    // Add some test data with UUID category
     const transactions = [
       {
         id: '1',
         description: 'Groceries',
         amount: 1000,
         type: 'expense' as const,
-        category: 'Food' as const,
+        category: '550e8400-e29b-41d4-a716-446655440001', // Food category ID
         date: '2024-01-15',
         createdAt: '2024-01-15T10:00:00Z',
       },
@@ -50,14 +52,14 @@ describe('SpendingChart', () => {
   });
 
   it('should render chart when there are expenses', () => {
-    // Add test data with multiple categories
+    // Add test data with multiple categories using UUIDs
     const transactions = [
       {
         id: '1',
         description: 'Groceries',
         amount: 1000,
         type: 'expense' as const,
-        category: 'Food' as const,
+        category: '550e8400-e29b-41d4-a716-446655440001', // Food
         date: '2024-01-15',
         createdAt: '2024-01-15T10:00:00Z',
       },
@@ -66,7 +68,7 @@ describe('SpendingChart', () => {
         description: 'Bus fare',
         amount: 500,
         type: 'expense' as const,
-        category: 'Transport' as const,
+        category: '550e8400-e29b-41d4-a716-446655440002', // Transport
         date: '2024-01-16',
         createdAt: '2024-01-16T10:00:00Z',
       },
@@ -75,7 +77,7 @@ describe('SpendingChart', () => {
         description: 'Electricity',
         amount: 2000,
         type: 'expense' as const,
-        category: 'Bills' as const,
+        category: '550e8400-e29b-41d4-a716-446655440003', // Bills
         date: '2024-01-17',
         createdAt: '2024-01-17T10:00:00Z',
       },
@@ -93,14 +95,14 @@ describe('SpendingChart', () => {
   });
 
   it('should not show income transactions in the chart', () => {
-    // Add income and expense transactions
+    // Add income and expense transactions with UUIDs
     const transactions = [
       {
         id: '1',
         description: 'Salary',
         amount: 50000,
         type: 'income' as const,
-        category: 'Salary' as const,
+        category: '550e8400-e29b-41d4-a716-446655440005', // Salary
         date: '2024-01-01',
         createdAt: '2024-01-01T10:00:00Z',
       },
@@ -109,7 +111,7 @@ describe('SpendingChart', () => {
         description: 'Groceries',
         amount: 1000,
         type: 'expense' as const,
-        category: 'Food' as const,
+        category: '550e8400-e29b-41d4-a716-446655440001', // Food
         date: '2024-01-15',
         createdAt: '2024-01-15T10:00:00Z',
       },
@@ -124,14 +126,14 @@ describe('SpendingChart', () => {
   });
 
   it('should handle categories with zero expenses', () => {
-    // Add expenses in only one category
+    // Add expenses in only one category using UUID
     const transactions = [
       {
         id: '1',
         description: 'Groceries',
         amount: 1000,
         type: 'expense' as const,
-        category: 'Food' as const,
+        category: '550e8400-e29b-41d4-a716-446655440001', // Food
         date: '2024-01-15',
         createdAt: '2024-01-15T10:00:00Z',
       },
@@ -155,7 +157,7 @@ describe('SpendingChart', () => {
         description: 'Groceries',
         amount: 1000,
         type: 'expense' as const,
-        category: 'Food' as const,
+        category: '550e8400-e29b-41d4-a716-446655440001', // Food
         date: '2024-01-15',
         createdAt: '2024-01-15T10:00:00Z',
       },
@@ -170,14 +172,14 @@ describe('SpendingChart', () => {
   });
 
   it('should aggregate multiple expenses in the same category', () => {
-    // Add multiple expenses in the same category
+    // Add multiple expenses in the same category using UUID
     const transactions = [
       {
         id: '1',
         description: 'Groceries',
         amount: 1000,
         type: 'expense' as const,
-        category: 'Food' as const,
+        category: '550e8400-e29b-41d4-a716-446655440001', // Food
         date: '2024-01-15',
         createdAt: '2024-01-15T10:00:00Z',
       },
@@ -186,7 +188,7 @@ describe('SpendingChart', () => {
         description: 'Restaurant',
         amount: 500,
         type: 'expense' as const,
-        category: 'Food' as const,
+        category: '550e8400-e29b-41d4-a716-446655440001', // Food
         date: '2024-01-16',
         createdAt: '2024-01-16T10:00:00Z',
       },

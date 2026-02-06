@@ -1,5 +1,6 @@
 import { type ChangeEvent } from 'react';
-import type { TransactionCategory, TransactionFilters } from '../types';
+import type { TransactionFilters } from '../types';
+import { useCategories } from '../contexts';
 
 /**
  * FilterBar component
@@ -7,26 +8,12 @@ import type { TransactionCategory, TransactionFilters } from '../types';
  * 
  * Features:
  * - Type filter dropdown (all/income/expense)
- * - Category filter dropdown (all categories + "all")
+ * - Category filter dropdown (dynamic categories + "all")
  * - Date range inputs (start and end date)
  * - Connected to filter state via props
  * 
  * Requirements: 5.1, 5.2, 5.3
  */
-
-// All available transaction categories
-const CATEGORIES: TransactionCategory[] = [
-  'Food',
-  'Transport',
-  'Bills',
-  'Entertainment',
-  'Salary',
-  'Freelance',
-  'Shopping',
-  'Healthcare',
-  'Education',
-  'Other',
-];
 
 interface FilterBarProps {
   filters: TransactionFilters;
@@ -34,6 +21,8 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
+  const { categories } = useCategories();
+
   /**
    * Handle type filter change
    */
@@ -49,7 +38,7 @@ export function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
    * Handle category filter change
    */
   const handleCategoryChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const newCategory = e.target.value as TransactionCategory | 'all';
+    const newCategory = e.target.value;
     onFiltersChange({
       ...filters,
       category: newCategory,
@@ -160,9 +149,9 @@ export function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
             aria-label="Filter by category"
           >
             <option value="all">All Categories</option>
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.icon} {cat.name}
               </option>
             ))}
           </select>

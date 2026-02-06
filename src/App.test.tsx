@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, BudgetProvider, ToastProvider } from './contexts';
+import { ThemeProvider, BudgetProvider, ToastProvider, CategoryProvider } from './contexts';
 import { Dashboard, TransactionList, BudgetGoals, Settings } from './pages';
 
 // Create a test version of App without BrowserRouter so we can use MemoryRouter
@@ -9,18 +9,20 @@ function AppRoutes() {
   return (
     <ThemeProvider>
       <ToastProvider>
-        <BudgetProvider>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/transactions" element={<TransactionList />} />
-                <Route path="/budget-goals" element={<BudgetGoals />} />
-                <Route path="/settings" element={<Settings />} />
-              </Routes>
-            </main>
-          </div>
-        </BudgetProvider>
+        <CategoryProvider>
+          <BudgetProvider>
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+              <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/transactions" element={<TransactionList />} />
+                  <Route path="/budget-goals" element={<BudgetGoals />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Routes>
+              </main>
+            </div>
+          </BudgetProvider>
+        </CategoryProvider>
       </ToastProvider>
     </ThemeProvider>
   );

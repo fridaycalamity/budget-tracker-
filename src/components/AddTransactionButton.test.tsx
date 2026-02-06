@@ -4,13 +4,16 @@ import { AddTransactionButton } from './AddTransactionButton';
 import { BudgetProvider } from '../contexts/BudgetContext';
 import { ToastProvider } from '../contexts/ToastContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
+import { CategoryProvider } from '../contexts/CategoryContext';
 
 // Wrapper component with required providers
 function TestWrapper({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <ToastProvider>
-        <BudgetProvider>{children}</BudgetProvider>
+        <CategoryProvider>
+          <BudgetProvider>{children}</BudgetProvider>
+        </CategoryProvider>
       </ToastProvider>
     </ThemeProvider>
   );
