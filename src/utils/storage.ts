@@ -124,7 +124,8 @@ export const storageService: StorageService = {
 
   /**
    * Retrieves theme preference from localStorage
-   * @returns Theme preference ('light' or 'dark'), defaults to 'light' if not set
+   * Falls back to system preference if not set
+   * @returns Theme preference ('light' or 'dark')
    * 
    * @example
    * const theme = storageService.getTheme();
@@ -139,7 +140,12 @@ export const storageService: StorageService = {
         return theme;
       }
       
-      // Default to light theme if invalid or not set
+      // Fall back to system preference if not set
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
+      
+      // Default to light theme
       return 'light';
     } catch (error) {
       console.error('Error reading theme from localStorage:', error);

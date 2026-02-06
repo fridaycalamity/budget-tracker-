@@ -33,7 +33,11 @@ export function Dashboard() {
       </div>
 
       {/* Summary Cards - Responsive grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div 
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        role="region"
+        aria-label="Financial summary"
+      >
         <SummaryCard
           title="Total Income"
           amount={summary.totalIncome}
@@ -52,23 +56,34 @@ export function Dashboard() {
       </div>
 
       {/* Spending Chart */}
-      <SpendingChart />
+      <div role="region" aria-label="Spending breakdown by category">
+        <SpendingChart />
+      </div>
 
       {/* Recent Transactions */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+      <div 
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
+        role="region"
+        aria-label="Recent transactions"
+      >
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           Recent Transactions
         </h2>
 
         {recentTransactions.length === 0 ? (
           // Empty state
-          <div className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
+          <div 
+            className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400"
+            role="status"
+            aria-live="polite"
+          >
             <svg
               className="w-16 h-16 mb-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -86,13 +101,18 @@ export function Dashboard() {
           </div>
         ) : (
           // Transaction list
-          <div className="space-y-3">
+          <div 
+            className="space-y-3"
+            role="list"
+            aria-label="Recent transaction list"
+          >
             {recentTransactions.map((transaction) => (
-              <TransactionRow
-                key={transaction.id}
-                transaction={transaction}
-                onDelete={deleteTransaction}
-              />
+              <div key={transaction.id} role="listitem">
+                <TransactionRow
+                  transaction={transaction}
+                  onDelete={deleteTransaction}
+                />
+              </div>
             ))}
           </div>
         )}

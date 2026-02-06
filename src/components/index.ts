@@ -11,3 +11,6 @@ export { SpendingChart } from './SpendingChart';
 export { AddTransactionButton } from './AddTransactionButton';
 export { Toast } from './Toast';
 export { ToastContainer } from './ToastContainer';
+export { BudgetProgress } from './BudgetProgress';
+export { LoadingSpinner } from './LoadingSpinner';
+export { SkeletonLoader } from './SkeletonLoader';

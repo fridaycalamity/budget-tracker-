@@ -1,6 +1,7 @@
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { useBudget } from '../contexts';
+import { useTheme } from '../contexts/ThemeContext';
 import { formatCurrency } from '../utils';
 import type { TransactionCategory } from '../types';
 
@@ -16,6 +17,8 @@ ChartJS.register(ArcElement, Tooltip, Legend);
  */
 export function SpendingChart() {
   const { summary } = useBudget();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   // Define colors for each category (distinct, accessible colors)
   const categoryColors: Record<TransactionCategory, string> = {
@@ -42,7 +45,7 @@ export function SpendingChart() {
   // Handle empty data state
   if (categoriesWithExpenses.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-200">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           Spending by Category
         </h2>
@@ -85,9 +88,7 @@ export function SpendingChart() {
         label: 'Expenses',
         data: categoriesWithExpenses.map((item) => item.amount),
         backgroundColor: categoriesWithExpenses.map((item) => categoryColors[item.category]),
-        borderColor: categoriesWithExpenses.map(() => 
-          document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff'
-        ),
+        borderColor: categoriesWithExpenses.map(() => isDark ? '#1f2937' : '#ffffff'),
         borderWidth: 2,
         hoverOffset: 4,
       },
@@ -106,7 +107,7 @@ export function SpendingChart() {
           font: {
             size: 12,
           },
-          color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#374151',
+          color: isDark ? '#e5e7eb' : '#374151',
           generateLabels: (chart: ChartJS) => {
             const data = chart.data;
             if (data.labels && data.datasets.length) {
@@ -126,10 +127,10 @@ export function SpendingChart() {
         },
       },
       tooltip: {
-        backgroundColor: document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-        titleColor: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#111827',
-        bodyColor: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#111827',
-        borderColor: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb',
+        backgroundColor: isDark ? '#1f2937' : '#ffffff',
+        titleColor: isDark ? '#e5e7eb' : '#111827',
+        bodyColor: isDark ? '#e5e7eb' : '#111827',
+        borderColor: isDark ? '#374151' : '#e5e7eb',
         borderWidth: 1,
         padding: 12,
         displayColors: true,
@@ -147,7 +148,7 @@ export function SpendingChart() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-200">
       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
         Spending by Category
       </h2>

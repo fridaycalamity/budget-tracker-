@@ -70,7 +70,11 @@ export function TransactionList() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
+        <div 
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center"
+          role="status"
+          aria-live="polite"
+        >
           <svg
             className="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600 mb-4"
             fill="none"
@@ -112,7 +116,11 @@ export function TransactionList() {
         <FilterBar filters={filters} onFiltersChange={setFilters} />
         <SortControls sortConfig={sortConfig} onSortChange={setSortConfig} />
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
+        <div 
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center"
+          role="status"
+          aria-live="polite"
+        >
           <svg
             className="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600 mb-4"
             fill="none"
@@ -152,25 +160,39 @@ export function TransactionList() {
       </div>
 
       {/* Filter Bar */}
-      <FilterBar filters={filters} onFiltersChange={setFilters} />
+      <div role="region" aria-label="Transaction filters">
+        <FilterBar filters={filters} onFiltersChange={setFilters} />
+      </div>
 
       {/* Sort Controls */}
-      <SortControls sortConfig={sortConfig} onSortChange={setSortConfig} />
+      <div role="region" aria-label="Sort controls">
+        <SortControls sortConfig={sortConfig} onSortChange={setSortConfig} />
+      </div>
 
       {/* Results count */}
-      <div className="text-sm text-gray-600 dark:text-gray-400">
+      <div 
+        className="text-sm text-gray-600 dark:text-gray-400"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         Showing {displayedTransactions.length} of {transactions.length} transaction
         {transactions.length !== 1 ? 's' : ''}
       </div>
 
       {/* Transaction List */}
-      <div className="space-y-3">
+      <div 
+        className="space-y-3"
+        role="list"
+        aria-label="Transaction list"
+      >
         {displayedTransactions.map((transaction) => (
-          <TransactionRow
-            key={transaction.id}
-            transaction={transaction}
-            onDelete={deleteTransaction}
-          />
+          <div key={transaction.id} role="listitem">
+            <TransactionRow
+              transaction={transaction}
+              onDelete={deleteTransaction}
+            />
+          </div>
         ))}
       </div>
     </div>

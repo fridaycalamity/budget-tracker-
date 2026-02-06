@@ -1,15 +1,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SpendingChart } from './SpendingChart';
-import { BudgetProvider, ToastProvider } from '../contexts';
+import { BudgetProvider, ToastProvider, ThemeProvider } from '../contexts';
 import { storageService } from '../utils';
 
 // Helper to render with providers
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
-    <ToastProvider>
-      <BudgetProvider>{ui}</BudgetProvider>
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <BudgetProvider>{ui}</BudgetProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 };
 
