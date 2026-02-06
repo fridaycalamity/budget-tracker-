@@ -1,0 +1,126 @@
+# Example GitHub Actions workflow for CI/CD
+# To use this file:
+# 1. Create a .github/workflows directory in your repository
+# 2. Copy this file to .github/workflows/deploy.yml
+# 3. Commit and push to trigger the workflow
+
+name: Build and Deploy
+
+on:
+  # Trigger on push to main branch
+  push:
+    branches: [ main ]
+  
+  # Trigger on pull request to main branch
+  pull_request:
+    branches: [ main ]
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  # Job 1: Build and Test
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: budget-tracker/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd budget-tracker
+        npm ci
+    
+    - name: Run linter
+      run: |
+        cd budget-tracker
+        npm run lint
+    
+    - name: Check formatting
+      run: |
+        cd budget-tracker
+        npm run format:check
+    
+    - name: Run tests
+      run: |
+        cd budget-tracker
+        npm run test -- --run
+    
+    - name: Build production
+      run: |
+        cd budget-tracker
+        npm run build
+    
+    - name: Upload build artifacts
+      if: matrix.node-version == '18.x'
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: budget-tracker/dist
+        retention-days: 7
+
+  # Job 2: Deploy to Vercel (example)
+  # Uncomment and configure if using Vercel
+  # deploy-vercel:
+  #   needs: build-and-test
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #   
+  #   - name: Deploy to Vercel
+  #     uses: amondnet/vercel-action@v25
+  #     with:
+  #       vercel-token: ${{ secrets.VERCEL_TOKEN }}
+  #       vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+  #       vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+  #       working-directory: budget-tracker
+  #       vercel-args: '--prod'
+
+  # Job 3: Deploy to Netlify (example)
+  # Uncomment and configure if using Netlify
+  # deploy-netlify:
+  #   needs: build-and-test
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #   
+  #   - name: Setup Node.js
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: '18.x'
+  #   
+  #   - name: Install dependencies
+  #     run: |
+  #       cd budget-tracker
+  #       npm ci
+  #   
+  #   - name: Build
+  #     run: |
+  #       cd budget-tracker
+  #       npm run build
+  #   
+  #   - name: Deploy to Netlify
+  #     uses: netlify/actions/cli@master
+  #     with:
+  #       args: deploy --prod --dir=budget-tracker/dist
+  #     env:
+  #       NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+  #       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
