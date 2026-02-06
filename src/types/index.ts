@@ -121,6 +121,7 @@ export interface FinancialSummary {
 export interface BudgetContextValue {
   transactions: Transaction[];
   addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  updateTransaction: (id: string, transaction: Omit<Transaction, 'id' | 'createdAt'>) => void;
   deleteTransaction: (id: string) => void;
   budgetGoal: BudgetGoal | null;
   setBudgetGoal: (goal: BudgetGoal | null) => void;

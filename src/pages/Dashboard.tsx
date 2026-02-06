@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { useBudget } from '../contexts';
 import { SummaryCard } from '../components/SummaryCard';
 import { SpendingChart } from '../components/SpendingChart';
 import { TransactionRow } from '../components/TransactionRow';
+import { TransactionModal } from '../components/TransactionModal';
+import type { Transaction } from '../types';
 
 /**
  * Dashboard page
@@ -11,6 +14,22 @@ import { TransactionRow } from '../components/TransactionRow';
  */
 export function Dashboard() {
   const { summary, transactions, deleteTransaction } = useBudget();
+
+  // Edit modal state
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Handle edit transaction
+  const handleEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsEditModalOpen(true);
+  };
+
+  // Handle close edit modal
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingTransaction(null);
+  };
 
   // Get 10 most recent transactions, sorted by date (newest first)
   const recentTransactions = [...transactions]
@@ -111,12 +130,20 @@ export function Dashboard() {
                 <TransactionRow
                   transaction={transaction}
                   onDelete={deleteTransaction}
+                  onEdit={handleEdit}
                 />
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Edit Transaction Modal */}
+      <TransactionModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        editTransaction={editingTransaction}
+      />
     </div>
   );
 }

@@ -9,11 +9,20 @@ interface CategoryFormProps {
   editCategory?: Category | null;
 }
 
-const AVAILABLE_EMOJIS = [
-  '🍔', '🚗', '💡', '🎮', '🏠', '💰', '📱', '🎓',
-  '✈️', '🎵', '🛒', '💼', '🏥', '🎁', '👕', '⚽',
-  '📚', '🐾', '💊', '🔧'
-];
+const EMOJI_CATEGORIES = {
+  'Food & Drink': ['🍔', '🍕', '🍜', '🍣', '🍰', '🍺', '☕', '🥗', '🍎', '🧁'],
+  'Transport': ['🚗', '🚕', '🚌', '🚇', '🚲', '✈️', '⛽', '🛵'],
+  'Home & Bills': ['🏠', '💡', '📱', '💧', '🔧', '🛋️', '🧹'],
+  'Shopping': ['🛒', '👕', '👟', '💄', '🎁', '💍', '🛍️'],
+  'Entertainment': ['🎮', '🎵', '🎬', '📺', '🎨', '🎭', '🎪'],
+  'Health & Fitness': ['💊', '🏥', '🏋️', '🧘', '🏃', '🩺'],
+  'Education': ['📚', '🎓', '💻', '📝', '🧪'],
+  'Finance': ['💰', '💳', '💼', '📈', '🏦', '💵'],
+  'Pets & Nature': ['🐾', '🐱', '🐶', '🌿', '🌸'],
+  'People & Life': ['❤️', '👶', '👨‍👩‍👧', '🎂', '💒', '⛪'],
+  'Travel': ['🏖️', '🏔️', '🗺️', '🧳', '🏕️'],
+  'Sports': ['⚽', '🏀', '🎾', '🏊', '🎯'],
+};
 
 const AVAILABLE_COLORS = [
   '#3B82F6', // blue
@@ -178,22 +187,31 @@ export function CategoryForm({ isOpen, onClose, editCategory }: CategoryFormProp
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Icon <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-10 gap-2">
-              {AVAILABLE_EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => setIcon(emoji)}
-                  className={`w-10 h-10 text-2xl flex items-center justify-center rounded-lg transition-all duration-200 ${
-                    icon === emoji
-                      ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500 scale-110'
-                      : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                  aria-label={`Select ${emoji} icon`}
-                  aria-pressed={icon === emoji}
-                >
-                  {emoji}
-                </button>
+            <div className="max-h-[200px] overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-900">
+              {Object.entries(EMOJI_CATEGORIES).map(([category, emojis]) => (
+                <div key={category} className="mb-3 last:mb-0">
+                  <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    {category}
+                  </h4>
+                  <div className="grid grid-cols-10 gap-1">
+                    {emojis.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => setIcon(emoji)}
+                        className={`w-8 h-8 text-xl flex items-center justify-center rounded transition-all duration-200 ${
+                          icon === emoji
+                            ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500 scale-110'
+                            : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                        aria-label={`Select ${emoji} icon`}
+                        aria-pressed={icon === emoji}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>

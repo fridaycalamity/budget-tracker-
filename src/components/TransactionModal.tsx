@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { TransactionForm } from './TransactionForm';
+import type { Transaction } from '../types';
 
 /**
  * TransactionModal component
- * Modal dialog for adding new transactions
+ * Modal dialog for adding or editing transactions
  * 
  * Features:
  * - Modal overlay with backdrop
@@ -13,6 +14,7 @@ import { TransactionForm } from './TransactionForm';
  * - Focus trap for accessibility
  * - Escape key to close
  * - Prevents body scroll when open
+ * - Supports both add and edit modes
  * 
  * Requirements: 12.1, 12.2, 7.4, 7.5
  */
@@ -20,9 +22,10 @@ import { TransactionForm } from './TransactionForm';
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  editTransaction?: Transaction | null;
 }
 
-export function TransactionModal({ isOpen, onClose }: TransactionModalProps) {
+export function TransactionModal({ isOpen, onClose, editTransaction }: TransactionModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
@@ -187,7 +190,7 @@ export function TransactionModal({ isOpen, onClose }: TransactionModalProps) {
             id="modal-title"
             className="text-xl font-semibold text-gray-900 dark:text-white"
           >
-            Add Transaction
+            {editTransaction ? 'Edit Transaction' : 'Add Transaction'}
           </h2>
           <button
             onClick={onClose}
@@ -212,7 +215,7 @@ export function TransactionModal({ isOpen, onClose }: TransactionModalProps) {
 
         {/* Form Content */}
         <div className="p-6">
-          <TransactionForm onSuccess={handleSuccess} />
+          <TransactionForm onSuccess={handleSuccess} editTransaction={editTransaction} />
         </div>
       </div>
     </div>

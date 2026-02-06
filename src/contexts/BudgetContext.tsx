@@ -67,6 +67,46 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
   };
 
   /**
+   * Update an existing transaction by ID
+   * Validates data and updates localStorage immediately
+   */
+  const updateTransaction = (id: string, transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
+    // Validate transaction data
+    const validation = validateTransaction(transaction);
+    if (!validation.isValid) {
+      const errorMessages = Object.values(validation.errors).join(', ');
+      showToast(`Validation failed: ${errorMessages}`, 'error');
+      throw new Error(`Invalid transaction: ${JSON.stringify(validation.errors)}`);
+    }
+
+    // Find the existing transaction
+    const existingTransaction = transactions.find((t) => t.id === id);
+    if (!existingTransaction) {
+      showToast('Transaction not found', 'error');
+      throw new Error(`Transaction with id ${id} not found`);
+    }
+
+    // Update transaction while preserving id and createdAt
+    const updatedTransaction: Transaction = {
+      ...transaction,
+      id: existingTransaction.id,
+      createdAt: existingTransaction.createdAt,
+    };
+
+    // Update in state
+    const updatedTransactions = transactions.map((t) =>
+      t.id === id ? updatedTransaction : t
+    );
+    setTransactions(updatedTransactions);
+
+    // Save to localStorage immediately
+    storageService.saveTransactions(updatedTransactions);
+
+    // Show success toast
+    showToast('Transaction updated successfully!', 'success');
+  };
+
+  /**
    * Delete a transaction by ID
    * Removes from state and updates localStorage immediately
    */
@@ -119,6 +159,7 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
   const value: BudgetContextValue = {
     transactions,
     addTransaction,
+    updateTransaction,
     deleteTransaction,
     budgetGoal,
     setBudgetGoal,

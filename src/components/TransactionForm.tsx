@@ -1,10 +1,11 @@
-import { useState, useMemo, type FormEvent, type ChangeEvent } from 'react';
+import { useState, useMemo, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { format } from 'date-fns';
 import { useBudget, useCategories } from '../contexts';
+import type { Transaction } from '../types';
 
 /**
  * TransactionForm component
- * Form for adding new transactions with validation
+ * Form for adding or editing transactions with validation
  * 
  * Features:
  * - Description input (required, max 200 characters)
@@ -14,15 +15,17 @@ import { useBudget, useCategories } from '../contexts';
  * - Date picker (defaults to current date)
  * - Form validation with error display
  * - Form submission handling
- * - Auto-clear after successful submission
+ * - Auto-clear after successful submission (add mode only)
+ * - Supports both add and edit modes
  */
 
 interface TransactionFormProps {
   onSuccess?: () => void; // Optional callback after successful submission
+  editTransaction?: Transaction | null; // Transaction to edit (null for add mode)
 }
 
-export function TransactionForm({ onSuccess }: TransactionFormProps) {
-  const { addTransaction } = useBudget();
+export function TransactionForm({ onSuccess, editTransaction }: TransactionFormProps) {
+  const { addTransaction, updateTransaction } = useBudget();
   const { getCategoriesByType } = useCategories();
 
   // Form state
@@ -31,6 +34,25 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+
+  // Initialize form with edit data
+  useEffect(() => {
+    if (editTransaction) {
+      setDescription(editTransaction.description);
+      setAmount(editTransaction.amount.toString());
+      setType(editTransaction.type);
+      setCategory(editTransaction.category);
+      setDate(editTransaction.date);
+    } else {
+      // Reset form for add mode
+      setDescription('');
+      setAmount('');
+      setType('expense');
+      setCategory('');
+      setDate(format(new Date(), 'yyyy-MM-dd'));
+    }
+    setErrors({});
+  }, [editTransaction]);
 
   // Get filtered categories based on transaction type
   const availableCategories = useMemo(() => {
@@ -123,17 +145,23 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
         date,
       };
 
-      // Add transaction via context
-      addTransaction(transaction);
+      // Add or update transaction via context
+      if (editTransaction) {
+        updateTransaction(editTransaction.id, transaction);
+      } else {
+        addTransaction(transaction);
+      }
 
-      // Clear form on success
-      setDescription('');
-      setAmount('');
-      setType('expense');
-      // Reset to default category
-      const otherCategory = availableCategories.find(cat => cat.name === 'Other');
-      setCategory(otherCategory?.id || availableCategories[0]?.id || '');
-      setDate(format(new Date(), 'yyyy-MM-dd'));
+      // Clear form on success (only in add mode)
+      if (!editTransaction) {
+        setDescription('');
+        setAmount('');
+        setType('expense');
+        // Reset to default category
+        const otherCategory = availableCategories.find(cat => cat.name === 'Other');
+        setCategory(otherCategory?.id || availableCategories[0]?.id || '');
+        setDate(format(new Date(), 'yyyy-MM-dd'));
+      }
       setErrors({});
 
       // Call success callback if provided
@@ -376,7 +404,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
             : 'bg-blue-600 hover:bg-blue-700 text-white'
         }`}
       >
-        {isSubmitting ? 'Adding...' : 'Add Transaction'}
+        {isSubmitting ? (editTransaction ? 'Updating...' : 'Adding...') : (editTransaction ? 'Update Transaction' : 'Add Transaction')}
       </button>
     </form>
   );

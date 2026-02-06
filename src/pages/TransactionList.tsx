@@ -3,8 +3,9 @@ import { useBudget } from '../contexts';
 import { FilterBar } from '../components/FilterBar';
 import { SortControls } from '../components/SortControls';
 import { TransactionRow } from '../components/TransactionRow';
+import { TransactionModal } from '../components/TransactionModal';
 import { filterTransactions, sortTransactions } from '../utils';
-import type { TransactionFilters, SortConfig } from '../types';
+import type { TransactionFilters, SortConfig, Transaction } from '../types';
 
 /**
  * TransactionList page
@@ -13,7 +14,8 @@ import type { TransactionFilters, SortConfig } from '../types';
  * Features:
  * - FilterBar for filtering by type, category, and date range
  * - SortControls for sorting by date or amount
- * - TransactionRow for each transaction
+ * - TransactionRow for each transaction with edit and delete
+ * - TransactionModal for editing transactions
  * - Empty state when no transactions exist
  * - No results state when filters return no matches
  * - Fully responsive design
@@ -22,6 +24,10 @@ import type { TransactionFilters, SortConfig } from '../types';
  */
 export function TransactionList() {
   const { transactions, deleteTransaction } = useBudget();
+
+  // Edit modal state
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<TransactionFilters>({
@@ -38,6 +44,18 @@ export function TransactionList() {
     field: 'date',
     direction: 'desc',
   });
+
+  // Handle edit transaction
+  const handleEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsEditModalOpen(true);
+  };
+
+  // Handle close edit modal
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingTransaction(null);
+  };
 
   // Apply filters and sorting using memoization for performance
   const displayedTransactions = useMemo(() => {
@@ -191,10 +209,18 @@ export function TransactionList() {
             <TransactionRow
               transaction={transaction}
               onDelete={deleteTransaction}
+              onEdit={handleEdit}
             />
           </div>
         ))}
       </div>
+
+      {/* Edit Transaction Modal */}
+      <TransactionModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        editTransaction={editingTransaction}
+      />
     </div>
   );
 }
