@@ -4,6 +4,7 @@ import { SummaryCard } from '../components/SummaryCard';
 import { SpendingChart } from '../components/SpendingChart';
 import { TransactionRow } from '../components/TransactionRow';
 import { TransactionModal } from '../components/TransactionModal';
+import { MonthlySummary } from '../components/MonthlySummary';
 import type { Transaction } from '../types';
 
 /**
@@ -77,6 +78,11 @@ export function Dashboard() {
       {/* Spending Chart */}
       <div role="region" aria-label="Spending breakdown by category">
         <SpendingChart />
+      </div>
+
+      {/* Monthly Summary */}
+      <div role="region" aria-label="Monthly financial overview">
+        <MonthlySummary />
       </div>
 
       {/* Recent Transactions */}

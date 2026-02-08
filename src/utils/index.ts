@@ -23,6 +23,17 @@ export {
   initializeDefaultCategories,
 } from './categoryMigration';
 
+// Re-export monthly calculation utilities
+export {
+  getMonthlyTotals,
+  getBestMonth,
+  getAverageSpending,
+  getSpendingTrend,
+  hasSufficientMonthlyData,
+  type MonthlyTotal,
+  type SpendingTrend,
+} from './monthlyCalculations';
+
 /**
  * Formats a number as Philippine Peso currency
  * @param amount - The amount to format
