@@ -24,6 +24,7 @@ describe('BudgetProgress', () => {
       deleteTransaction: vi.fn(),
       setBudgetGoal: vi.fn(),
       clearAllData: vi.fn(),
+      loading: false,
     });
 
     const { container } = render(<BudgetProgress />);
@@ -48,6 +49,7 @@ describe('BudgetProgress', () => {
       deleteTransaction: vi.fn(),
       setBudgetGoal: vi.fn(),
       clearAllData: vi.fn(),
+      loading: false,
     });
 
     render(<BudgetProgress />);
@@ -81,6 +83,7 @@ describe('BudgetProgress', () => {
       deleteTransaction: vi.fn(),
       setBudgetGoal: vi.fn(),
       clearAllData: vi.fn(),
+      loading: false,
     });
 
     render(<BudgetProgress />);
@@ -112,6 +115,7 @@ describe('BudgetProgress', () => {
       deleteTransaction: vi.fn(),
       setBudgetGoal: vi.fn(),
       clearAllData: vi.fn(),
+      loading: false,
     });
 
     render(<BudgetProgress />);
@@ -146,6 +150,7 @@ describe('BudgetProgress', () => {
       deleteTransaction: vi.fn(),
       setBudgetGoal: vi.fn(),
       clearAllData: vi.fn(),
+      loading: false,
     });
 
     render(<BudgetProgress />);

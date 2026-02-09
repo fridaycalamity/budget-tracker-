@@ -25,6 +25,7 @@ export default defineConfig({
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'chart-vendor': ['chart.js', 'react-chartjs-2'],
           'utils-vendor': ['date-fns', 'uuid'],
+          'supabase-vendor': ['@supabase/supabase-js'],
         },
       },
     },

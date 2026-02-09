@@ -8,143 +8,270 @@ import {
   needsMigration,
   migrateTransactions,
 } from '../utils/categoryMigration';
+import { useAuth } from './AuthContext';
+import { supabase } from '../lib/supabase';
 
 const CategoryContext = createContext<CategoryContextValue | undefined>(undefined);
 
+// Map a Supabase row to a frontend Category
+function mapDbToCategory(row: Record<string, unknown>): Category {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    icon: (row.icon as string) ?? '',
+    color: (row.color as string) ?? '#6b7280',
+    type: row.type as 'income' | 'expense' | 'both',
+    isDefault: (row.is_default as boolean) ?? false,
+  };
+}
+
 export function CategoryProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [initialized, setInitialized] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Initialize categories and handle migration on mount
-  useEffect(() => {
-    if (initialized) return;
+  // Seed default categories for a new user in Supabase
+  const seedDefaultCategories = useCallback(
+    async (userId: string): Promise<Category[]> => {
+      const defaults = initializeDefaultCategories(DEFAULT_CATEGORIES);
+      const toInsert = defaults.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon,
+        color: cat.color,
+        type: cat.type,
+        is_default: true,
+        user_id: userId,
+      }));
 
-    // Initialize default categories with stable IDs
-    const defaultCategories = initializeDefaultCategories(DEFAULT_CATEGORIES);
-
-    // Load custom categories from storage
-    const customCategories = storageService.getCategories();
-
-    // Merge default and custom categories
-    const allCategories = [...defaultCategories, ...customCategories];
-    setCategories(allCategories);
-
-    // Check if migration is needed
-    const migrationFlag = storageService.getMigrationFlag();
-    if (!migrationFlag) {
-      const transactions = storageService.getTransactions();
-      
-      if (needsMigration(transactions)) {
-        // Migrate transactions from legacy string categories to IDs
-        const migratedTransactions = migrateTransactions(transactions, defaultCategories);
-        storageService.saveTransactions(migratedTransactions);
-        console.log('Migrated transactions to new category system');
+      const { error } = await supabase.from('categories').insert(toInsert);
+      if (error) {
+        console.error('Error seeding default categories:', error);
       }
-      
-      // Set migration flag to prevent re-migration
-      storageService.setMigrationFlag(true);
-    }
+      return defaults;
+    },
+    []
+  );
 
-    setInitialized(true);
-  }, [initialized]);
+  // Load categories
+  const loadCategories = useCallback(async () => {
+    if (!user) {
+      // Fallback to localStorage when not authenticated
+      const defaultCategories = initializeDefaultCategories(DEFAULT_CATEGORIES);
+      const customCategories = storageService.getCategories();
+      setCategories([...defaultCategories, ...customCategories]);
 
-  // Add a new custom category
-  const addCategory = useCallback((categoryData: Omit<Category, 'id' | 'isDefault'>) => {
-    const newCategory: Category = {
-      ...categoryData,
-      id: uuidv4(),
-      isDefault: false,
-    };
-
-    setCategories(prev => {
-      const updated = [...prev, newCategory];
-      
-      // Save only custom categories to storage
-      const customCategories = updated.filter(cat => !cat.isDefault);
-      storageService.saveCategories(customCategories);
-      
-      return updated;
-    });
-  }, []);
-
-  // Update an existing category
-  const updateCategory = useCallback((id: string, updates: Partial<Omit<Category, 'id' | 'isDefault'>>) => {
-    setCategories(prev => {
-      const updated = prev.map(cat => {
-        if (cat.id === id && !cat.isDefault) {
-          return { ...cat, ...updates };
+      // Handle legacy migration
+      const migrationFlag = storageService.getMigrationFlag();
+      if (!migrationFlag) {
+        const transactions = storageService.getTransactions();
+        if (needsMigration(transactions)) {
+          const migratedTransactions = migrateTransactions(transactions, defaultCategories);
+          storageService.saveTransactions(migratedTransactions);
         }
-        return cat;
-      });
-      
-      // Save only custom categories to storage
-      const customCategories = updated.filter(cat => !cat.isDefault);
-      storageService.saveCategories(customCategories);
-      
-      return updated;
-    });
-  }, []);
-
-  // Delete a category and reassign its transactions to "Other"
-  const deleteCategory = useCallback((id: string) => {
-    const category = categories.find(cat => cat.id === id);
-    
-    // Prevent deletion of default categories
-    if (!category || category.isDefault) {
-      console.error('Cannot delete default category');
-      return;
-    }
-
-    // Find the "Other" category for reassignment
-    const otherCategory = categories.find(cat => cat.name === 'Other');
-    if (!otherCategory) {
-      console.error('Cannot find "Other" category for reassignment');
-      return;
-    }
-
-    // Reassign all transactions from deleted category to "Other"
-    const transactions = storageService.getTransactions();
-    const updatedTransactions = transactions.map(transaction => {
-      if (transaction.category === id) {
-        return { ...transaction, category: otherCategory.id };
+        storageService.setMigrationFlag(true);
       }
-      return transaction;
-    });
-    storageService.saveTransactions(updatedTransactions);
 
-    // Remove category from state
-    setCategories(prev => {
-      const updated = prev.filter(cat => cat.id !== id);
-      
-      // Save only custom categories to storage
-      const customCategories = updated.filter(cat => !cat.isDefault);
-      storageService.saveCategories(customCategories);
-      
-      return updated;
-    });
-  }, [categories]);
-
-  // Get category by ID
-  const getCategoryById = useCallback((id: string): Category | undefined => {
-    return categories.find(cat => cat.id === id);
-  }, [categories]);
-
-  // Get categories by type
-  const getCategoriesByType = useCallback((type: 'income' | 'expense' | 'both'): Category[] => {
-    if (type === 'both') {
-      return categories.filter(cat => cat.type === 'both');
+      setLoading(false);
+      return;
     }
-    return categories.filter(cat => cat.type === type || cat.type === 'both');
-  }, [categories]);
 
-  // Get default categories
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // New user — seed default categories
+        const defaults = await seedDefaultCategories(user.id);
+        setCategories(defaults);
+      } else {
+        setCategories(data.map(mapDbToCategory));
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      // Fallback to localStorage
+      const defaultCategories = initializeDefaultCategories(DEFAULT_CATEGORIES);
+      const customCategories = storageService.getCategories();
+      setCategories([...defaultCategories, ...customCategories]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, seedDefaultCategories]);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  const addCategory = useCallback(
+    async (categoryData: Omit<Category, 'id' | 'isDefault'>) => {
+      const newCategory: Category = {
+        ...categoryData,
+        id: uuidv4(),
+        isDefault: false,
+      };
+
+      if (user) {
+        try {
+          const { error } = await supabase.from('categories').insert({
+            id: newCategory.id,
+            name: newCategory.name,
+            icon: newCategory.icon,
+            color: newCategory.color,
+            type: newCategory.type,
+            is_default: false,
+            user_id: user.id,
+          });
+
+          if (error) throw error;
+          setCategories((prev) => [...prev, newCategory]);
+        } catch (error) {
+          console.error('Error adding category:', error);
+        }
+      } else {
+        setCategories((prev) => {
+          const updated = [...prev, newCategory];
+          const customCategories = updated.filter((cat) => !cat.isDefault);
+          storageService.saveCategories(customCategories);
+          return updated;
+        });
+      }
+    },
+    [user]
+  );
+
+  const updateCategory = useCallback(
+    async (id: string, updates: Partial<Omit<Category, 'id' | 'isDefault'>>) => {
+      if (user) {
+        try {
+          const dbUpdates: Record<string, unknown> = {};
+          if (updates.name !== undefined) dbUpdates.name = updates.name;
+          if (updates.icon !== undefined) dbUpdates.icon = updates.icon;
+          if (updates.color !== undefined) dbUpdates.color = updates.color;
+          if (updates.type !== undefined) dbUpdates.type = updates.type;
+
+          const { error } = await supabase
+            .from('categories')
+            .update(dbUpdates)
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .eq('is_default', false);
+
+          if (error) throw error;
+
+          setCategories((prev) =>
+            prev.map((cat) => {
+              if (cat.id === id && !cat.isDefault) {
+                return { ...cat, ...updates };
+              }
+              return cat;
+            })
+          );
+        } catch (error) {
+          console.error('Error updating category:', error);
+        }
+      } else {
+        setCategories((prev) => {
+          const updated = prev.map((cat) => {
+            if (cat.id === id && !cat.isDefault) {
+              return { ...cat, ...updates };
+            }
+            return cat;
+          });
+          const customCategories = updated.filter((cat) => !cat.isDefault);
+          storageService.saveCategories(customCategories);
+          return updated;
+        });
+      }
+    },
+    [user]
+  );
+
+  const deleteCategory = useCallback(
+    async (id: string) => {
+      const category = categories.find((cat) => cat.id === id);
+      if (!category || category.isDefault) {
+        console.error('Cannot delete default category');
+        return;
+      }
+
+      const otherCategory = categories.find((cat) => cat.name === 'Other');
+      if (!otherCategory) {
+        console.error('Cannot find "Other" category for reassignment');
+        return;
+      }
+
+      if (user) {
+        try {
+          // Reassign transactions in Supabase
+          await supabase
+            .from('transactions')
+            .update({ category_id: otherCategory.id })
+            .eq('category_id', id)
+            .eq('user_id', user.id);
+
+          // Delete category
+          const { error } = await supabase
+            .from('categories')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id);
+
+          if (error) throw error;
+
+          setCategories((prev) => prev.filter((cat) => cat.id !== id));
+        } catch (error) {
+          console.error('Error deleting category:', error);
+        }
+      } else {
+        // Reassign transactions in localStorage
+        const transactions = storageService.getTransactions();
+        const updatedTransactions = transactions.map((transaction) => {
+          if (transaction.category === id) {
+            return { ...transaction, category: otherCategory.id };
+          }
+          return transaction;
+        });
+        storageService.saveTransactions(updatedTransactions);
+
+        setCategories((prev) => {
+          const updated = prev.filter((cat) => cat.id !== id);
+          const customCategories = updated.filter((cat) => !cat.isDefault);
+          storageService.saveCategories(customCategories);
+          return updated;
+        });
+      }
+    },
+    [categories, user]
+  );
+
+  const getCategoryById = useCallback(
+    (id: string): Category | undefined => {
+      return categories.find((cat) => cat.id === id);
+    },
+    [categories]
+  );
+
+  const getCategoriesByType = useCallback(
+    (type: 'income' | 'expense' | 'both'): Category[] => {
+      if (type === 'both') {
+        return categories.filter((cat) => cat.type === 'both');
+      }
+      return categories.filter((cat) => cat.type === type || cat.type === 'both');
+    },
+    [categories]
+  );
+
   const getDefaultCategories = useCallback((): Category[] => {
-    return categories.filter(cat => cat.isDefault);
+    return categories.filter((cat) => cat.isDefault);
   }, [categories]);
 
-  // Get custom categories
   const getCustomCategories = useCallback((): Category[] => {
-    return categories.filter(cat => !cat.isDefault);
+    return categories.filter((cat) => !cat.isDefault);
   }, [categories]);
 
   const value: CategoryContextValue = {
@@ -156,13 +283,10 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
     getCategoriesByType,
     getDefaultCategories,
     getCustomCategories,
+    loading,
   };
 
-  return (
-    <CategoryContext.Provider value={value}>
-      {children}
-    </CategoryContext.Provider>
-  );
+  return <CategoryContext.Provider value={value}>{children}</CategoryContext.Provider>;
 }
 
 export function useCategories(): CategoryContextValue {

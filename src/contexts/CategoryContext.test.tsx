@@ -16,6 +16,25 @@ vi.mock('../utils/storage', () => ({
   },
 }));
 
+// Mock AuthContext (no authenticated user for localStorage tests)
+vi.mock('./AuthContext', () => ({
+  useAuth: vi.fn(() => ({ user: null, session: null, loading: false })),
+}));
+
+// Mock Supabase client
+vi.mock('../lib/supabase', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      delete: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    })),
+  },
+}));
+
 describe('CategoryContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();

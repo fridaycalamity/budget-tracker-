@@ -127,6 +127,7 @@ export interface BudgetContextValue {
   setBudgetGoal: (goal: BudgetGoal | null) => void;
   clearAllData: () => void;
   summary: FinancialSummary;
+  loading: boolean;
 }
 
 /**
@@ -142,6 +143,7 @@ export interface CategoryContextValue {
   getCategoriesByType: (type: 'income' | 'expense' | 'both') => Category[];
   getDefaultCategories: () => Category[];
   getCustomCategories: () => Category[];
+  loading: boolean;
 }
 
 /**

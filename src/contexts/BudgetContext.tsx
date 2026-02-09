@@ -1,8 +1,10 @@
-import { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useState, useMemo, useEffect, useCallback, type ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { storageService, calculateSummary, validateTransaction, validateBudgetGoal } from '../utils';
 import type { Transaction, BudgetGoal, BudgetContextValue, FinancialSummary } from '../types';
 import { useToast } from './ToastContext';
+import { useAuth } from './AuthContext';
+import { supabase } from '../lib/supabase';
 
 // Create the context
 const BudgetContext = createContext<BudgetContextValue | undefined>(undefined);
@@ -12,35 +14,89 @@ interface BudgetProviderProps {
   children: ReactNode;
 }
 
-/**
- * BudgetProvider component
- * Manages transaction and budget goal state with localStorage persistence
- * Calculates financial summary from transactions
- */
+// Map a Supabase row to a frontend Transaction
+function mapDbToTransaction(row: Record<string, unknown>): Transaction {
+  return {
+    id: row.id as string,
+    description: row.description as string,
+    amount: Number(row.amount),
+    type: row.type as 'income' | 'expense',
+    category: row.category_id as string,
+    date: row.date as string,
+    createdAt: row.created_at as string,
+  };
+}
+
 export function BudgetProvider({ children }: BudgetProviderProps) {
   const { showToast } = useToast();
+  const { user } = useAuth();
 
-  // Initialize transactions from localStorage
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    return storageService.getTransactions();
-  });
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [budgetGoal, setBudgetGoalState] = useState<BudgetGoal | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Initialize budget goal from localStorage
-  const [budgetGoal, setBudgetGoalState] = useState<BudgetGoal | null>(() => {
-    return storageService.getBudgetGoal();
-  });
+  // Fetch data from Supabase when user changes
+  const fetchData = useCallback(async () => {
+    if (!user) {
+      // Fallback to localStorage when not authenticated
+      setTransactions(storageService.getTransactions());
+      setBudgetGoalState(storageService.getBudgetGoal());
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Fetch transactions
+      const { data: txData, error: txError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
+
+      if (txError) throw txError;
+      setTransactions((txData ?? []).map(mapDbToTransaction));
+
+      // Fetch user_settings for budget_limit
+      const { data: settings, error: settingsError } = await supabase
+        .from('user_settings')
+        .select('budget_limit')
+        .eq('user_id', user.id)
+        .single();
+
+      if (settingsError && settingsError.code !== 'PGRST116') {
+        // PGRST116 = no rows found, which is OK for new users
+        throw settingsError;
+      }
+
+      if (settings && settings.budget_limit > 0) {
+        const now = new Date();
+        const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        setBudgetGoalState({ monthlyLimit: Number(settings.budget_limit), month });
+      } else {
+        setBudgetGoalState(null);
+      }
+    } catch (error) {
+      console.error('Error fetching budget data:', error);
+      showToast('Failed to load data from server. Using local data.', 'error');
+      // Fallback to localStorage
+      setTransactions(storageService.getTransactions());
+      setBudgetGoalState(storageService.getBudgetGoal());
+    } finally {
+      setLoading(false);
+    }
+  }, [user, showToast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Calculate financial summary whenever transactions change
   const summary: FinancialSummary = useMemo(() => {
     return calculateSummary(transactions);
   }, [transactions]);
 
-  /**
-   * Add a new transaction
-   * Generates unique ID and timestamp, validates data, and persists to localStorage
-   */
-  const addTransaction = (transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
-    // Validate transaction data
+  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
     const validation = validateTransaction(transaction);
     if (!validation.isValid) {
       const errorMessages = Object.values(validation.errors).join(', ');
@@ -48,30 +104,50 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
       throw new Error(`Invalid transaction: ${JSON.stringify(validation.errors)}`);
     }
 
-    // Create complete transaction with ID and timestamp
     const newTransaction: Transaction = {
       ...transaction,
       id: uuidv4(),
       createdAt: new Date().toISOString(),
     };
 
-    // Add to state
-    const updatedTransactions = [...transactions, newTransaction];
-    setTransactions(updatedTransactions);
+    if (user) {
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .insert({
+            description: newTransaction.description,
+            amount: newTransaction.amount,
+            type: newTransaction.type,
+            category_id: newTransaction.category,
+            date: newTransaction.date,
+            user_id: user.id,
+          })
+          .select()
+          .single();
 
-    // Save to localStorage immediately
-    storageService.saveTransactions(updatedTransactions);
+        if (error) throw error;
 
-    // Show success toast
-    showToast('Transaction added successfully!', 'success');
+        const savedTransaction = mapDbToTransaction(data);
+        setTransactions((prev) => [savedTransaction, ...prev]);
+        showToast('Transaction added successfully!', 'success');
+      } catch (error) {
+        console.error('Error adding transaction:', error);
+        showToast('Failed to save transaction to server.', 'error');
+        // Fallback to localStorage
+        const updated = [newTransaction, ...transactions];
+        setTransactions(updated);
+        storageService.saveTransactions(updated);
+      }
+    } else {
+      // localStorage fallback
+      const updated = [newTransaction, ...transactions];
+      setTransactions(updated);
+      storageService.saveTransactions(updated);
+      showToast('Transaction added successfully!', 'success');
+    }
   };
 
-  /**
-   * Update an existing transaction by ID
-   * Validates data and updates localStorage immediately
-   */
-  const updateTransaction = (id: string, transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
-    // Validate transaction data
+  const updateTransaction = async (id: string, transaction: Omit<Transaction, 'id' | 'createdAt'>) => {
     const validation = validateTransaction(transaction);
     if (!validation.isValid) {
       const errorMessages = Object.values(validation.errors).join(', ');
@@ -79,55 +155,79 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
       throw new Error(`Invalid transaction: ${JSON.stringify(validation.errors)}`);
     }
 
-    // Find the existing transaction
     const existingTransaction = transactions.find((t) => t.id === id);
     if (!existingTransaction) {
       showToast('Transaction not found', 'error');
       throw new Error(`Transaction with id ${id} not found`);
     }
 
-    // Update transaction while preserving id and createdAt
-    const updatedTransaction: Transaction = {
-      ...transaction,
-      id: existingTransaction.id,
-      createdAt: existingTransaction.createdAt,
-    };
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('transactions')
+          .update({
+            description: transaction.description,
+            amount: transaction.amount,
+            type: transaction.type,
+            category_id: transaction.category,
+            date: transaction.date,
+          })
+          .eq('id', id)
+          .eq('user_id', user.id);
 
-    // Update in state
-    const updatedTransactions = transactions.map((t) =>
-      t.id === id ? updatedTransaction : t
-    );
-    setTransactions(updatedTransactions);
+        if (error) throw error;
 
-    // Save to localStorage immediately
-    storageService.saveTransactions(updatedTransactions);
+        const updatedTransaction: Transaction = {
+          ...transaction,
+          id: existingTransaction.id,
+          createdAt: existingTransaction.createdAt,
+        };
 
-    // Show success toast
-    showToast('Transaction updated successfully!', 'success');
+        setTransactions((prev) => prev.map((t) => (t.id === id ? updatedTransaction : t)));
+        showToast('Transaction updated successfully!', 'success');
+      } catch (error) {
+        console.error('Error updating transaction:', error);
+        showToast('Failed to update transaction on server.', 'error');
+      }
+    } else {
+      const updatedTransaction: Transaction = {
+        ...transaction,
+        id: existingTransaction.id,
+        createdAt: existingTransaction.createdAt,
+      };
+      const updated = transactions.map((t) => (t.id === id ? updatedTransaction : t));
+      setTransactions(updated);
+      storageService.saveTransactions(updated);
+      showToast('Transaction updated successfully!', 'success');
+    }
   };
 
-  /**
-   * Delete a transaction by ID
-   * Removes from state and updates localStorage immediately
-   */
-  const deleteTransaction = (id: string) => {
-    // Filter out the transaction with the given ID
-    const updatedTransactions = transactions.filter((t) => t.id !== id);
-    setTransactions(updatedTransactions);
+  const deleteTransaction = async (id: string) => {
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('transactions')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id);
 
-    // Save to localStorage immediately
-    storageService.saveTransactions(updatedTransactions);
+        if (error) throw error;
 
-    // Show success toast
-    showToast('Transaction deleted successfully!', 'success');
+        setTransactions((prev) => prev.filter((t) => t.id !== id));
+        showToast('Transaction deleted successfully!', 'success');
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+        showToast('Failed to delete transaction from server.', 'error');
+      }
+    } else {
+      const updated = transactions.filter((t) => t.id !== id);
+      setTransactions(updated);
+      storageService.saveTransactions(updated);
+      showToast('Transaction deleted successfully!', 'success');
+    }
   };
 
-  /**
-   * Set or update budget goal
-   * Validates data and persists to localStorage immediately
-   */
-  const setBudgetGoal = (goal: BudgetGoal | null) => {
-    // Validate if goal is not null
+  const setBudgetGoal = async (goal: BudgetGoal | null) => {
     if (goal !== null) {
       const validation = validateBudgetGoal(goal);
       if (!validation.isValid) {
@@ -135,24 +235,44 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
       }
     }
 
-    // Update state
-    setBudgetGoalState(goal);
+    if (user) {
+      try {
+        const { error } = await supabase.from('user_settings').upsert(
+          {
+            user_id: user.id,
+            budget_limit: goal?.monthlyLimit ?? 0,
+          },
+          { onConflict: 'user_id' }
+        );
 
-    // Save to localStorage immediately
-    storageService.saveBudgetGoal(goal);
+        if (error) throw error;
+        setBudgetGoalState(goal);
+      } catch (error) {
+        console.error('Error saving budget goal:', error);
+        showToast('Failed to save budget goal to server.', 'error');
+      }
+    } else {
+      setBudgetGoalState(goal);
+      storageService.saveBudgetGoal(goal);
+    }
   };
 
-  /**
-   * Clear all data
-   * Resets transactions and budget goal to initial state
-   * Clears localStorage
-   */
-  const clearAllData = () => {
-    // Reset state to empty
+  const clearAllData = async () => {
+    if (user) {
+      try {
+        await supabase.from('transactions').delete().eq('user_id', user.id);
+        await supabase
+          .from('user_settings')
+          .update({ budget_limit: 0 })
+          .eq('user_id', user.id);
+      } catch (error) {
+        console.error('Error clearing data:', error);
+        showToast('Failed to clear data on server.', 'error');
+      }
+    }
+
     setTransactions([]);
     setBudgetGoalState(null);
-
-    // Clear localStorage
     storageService.clearAll();
   };
 
@@ -165,15 +285,12 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     setBudgetGoal,
     clearAllData,
     summary,
+    loading,
   };
 
   return <BudgetContext.Provider value={value}>{children}</BudgetContext.Provider>;
 }
 
-/**
- * Custom hook to use the budget context
- * Throws error if used outside BudgetProvider
- */
 // eslint-disable-next-line react-refresh/only-export-components
 export function useBudget(): BudgetContextValue {
   const context = useContext(BudgetContext);

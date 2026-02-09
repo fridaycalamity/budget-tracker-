@@ -8,3 +8,6 @@ export { BudgetProvider, useBudget } from './BudgetContext';
 export { ToastProvider, useToast } from './ToastContext';
 // Export Category Context
 export { CategoryProvider, useCategories } from './CategoryContext';
+
+// Export Auth Context
+export { AuthProvider, useAuth } from './AuthContext';
