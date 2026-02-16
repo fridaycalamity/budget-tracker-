@@ -172,7 +172,8 @@ describe('Dashboard', () => {
     renderDashboard();
     
     // Should display only 10 transactions
-    const transactionElements = screen.getAllByRole('listitem');
+    const recentTransactionList = screen.getByRole('list', { name: /recent transaction list/i });
+    const transactionElements = recentTransactionList.querySelectorAll('[role="listitem"]');
     expect(transactionElements.length).toBe(10);
   });
 

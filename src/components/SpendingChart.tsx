@@ -19,6 +19,7 @@ export function SpendingChart() {
   const { categories } = useCategories();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const textColor = isDark ? '#E5E7EB' : '#111827';
 
   // Filter out categories with zero expenses and prepare chart data
   const categoriesWithExpenses = Object.entries(summary.expensesByCategory)
@@ -87,38 +88,23 @@ export function SpendingChart() {
   // Chart options
   const options = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
+        display: false,
         position: 'bottom' as const,
         labels: {
           padding: 15,
           font: {
             size: 12,
           },
-          color: isDark ? '#e5e7eb' : '#374151',
-          generateLabels: (chart: ChartJS) => {
-            const data = chart.data;
-            if (data.labels && data.datasets.length) {
-              return data.labels.map((label, i) => {
-                const value = data.datasets[0].data[i] as number;
-                const backgroundColor = data.datasets[0].backgroundColor as string[];
-                return {
-                  text: `${label}: ${formatCurrency(value)}`,
-                  fillStyle: backgroundColor[i],
-                  hidden: false,
-                  index: i,
-                };
-              });
-            }
-            return [];
-          },
+          color: textColor,
         },
       },
       tooltip: {
         backgroundColor: isDark ? '#1f2937' : '#ffffff',
-        titleColor: isDark ? '#e5e7eb' : '#111827',
-        bodyColor: isDark ? '#e5e7eb' : '#111827',
+        titleColor: textColor,
+        bodyColor: textColor,
         borderColor: isDark ? '#374151' : '#e5e7eb',
         borderWidth: 1,
         padding: 12,
@@ -137,12 +123,34 @@ export function SpendingChart() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-200">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 transition-colors duration-200">
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">
         Spending by Category
       </h2>
-      <div className="relative" style={{ maxHeight: '300px' }}>
-        <Doughnut data={chartData} options={options} />
+
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4 sm:gap-6">
+        <div className="w-full max-w-[360px] h-[240px] sm:h-[280px] mx-auto">
+          <Doughnut data={chartData} options={options} />
+        </div>
+
+        <ul className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+          {categoriesWithExpenses.map((item) => (
+            <li
+              key={item.categoryId}
+              className="flex items-center justify-between gap-3 text-sm text-gray-700 dark:text-gray-200"
+            >
+              <span className="flex items-center gap-2 min-w-0">
+                <span
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: item.categoryColor }}
+                  aria-hidden="true"
+                />
+                <span className="truncate">{item.categoryIcon} {item.categoryName}</span>
+              </span>
+              <span className="font-medium whitespace-nowrap">{formatCurrency(item.amount)}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

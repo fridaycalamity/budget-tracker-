@@ -34,6 +34,13 @@ export {
   type SpendingTrend,
 } from './monthlyCalculations';
 
+export {
+  getLocalDateKey,
+  getDailyExpenseMap,
+  getLastNDaysExpenses,
+  type DailyExpensePoint,
+} from './dailyExpense';
+
 /**
  * Formats a number as Philippine Peso currency
  * @param amount - The amount to format

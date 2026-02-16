@@ -17,5 +17,6 @@ export { SkeletonLoader } from './SkeletonLoader';
 export { CategoryManager } from './CategoryManager';
 export { CategoryForm } from './CategoryForm';
 export { MonthlySummary } from './MonthlySummary';
+export { DailyExpense } from './DailyExpense';
 export { InstallPWA } from './InstallPWA';
 export { OfflineBanner } from './OfflineBanner';
