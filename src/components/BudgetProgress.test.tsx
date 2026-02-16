@@ -2,37 +2,48 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BudgetProgress } from './BudgetProgress';
 import * as BudgetContext from '../contexts/BudgetContext';
+import type { BudgetContextValue } from '../types';
 
 // Mock the useBudget hook
 vi.mock('../contexts/BudgetContext', () => ({
   useBudget: vi.fn(),
 }));
 
+const createMockBudgetContext = (
+  overrides: Partial<BudgetContextValue> = {}
+): BudgetContextValue => ({
+  summary: {
+    totalIncome: 0,
+    totalExpenses: 0,
+    balance: 0,
+    expensesByCategory: {} as any,
+  },
+  budgetGoal: null,
+  transactions: [],
+  addTransaction: vi.fn(),
+  updateTransaction: vi.fn(),
+  deleteTransaction: vi.fn(),
+  setBudgetGoal: vi.fn(),
+  clearAllData: vi.fn(),
+  retrySync: vi.fn(async () => {}),
+  clearLocalCache: vi.fn(async () => {}),
+  queuedCount: 0,
+  isSyncing: false,
+  isOffline: false,
+  loading: false,
+  ...overrides,
+});
+
 describe('BudgetProgress', () => {
   it('should not render when no budget goal is set', () => {
-    vi.mocked(BudgetContext.useBudget).mockReturnValue({
-      summary: {
-        totalIncome: 0,
-        totalExpenses: 0,
-        balance: 0,
-        expensesByCategory: {} as any,
-      },
-      budgetGoal: null,
-      transactions: [],
-      addTransaction: vi.fn(),
-      updateTransaction: vi.fn(),
-      deleteTransaction: vi.fn(),
-      setBudgetGoal: vi.fn(),
-      clearAllData: vi.fn(),
-      loading: false,
-    });
+    vi.mocked(BudgetContext.useBudget).mockReturnValue(createMockBudgetContext());
 
     const { container } = render(<BudgetProgress />);
     expect(container.firstChild).toBeNull();
   });
 
   it('should render progress bar with correct percentage', () => {
-    vi.mocked(BudgetContext.useBudget).mockReturnValue({
+    vi.mocked(BudgetContext.useBudget).mockReturnValue(createMockBudgetContext({
       summary: {
         totalIncome: 10000,
         totalExpenses: 5000,
@@ -43,14 +54,7 @@ describe('BudgetProgress', () => {
         monthlyLimit: 10000,
         month: '2024-01',
       },
-      transactions: [],
-      addTransaction: vi.fn(),
-      updateTransaction: vi.fn(),
-      deleteTransaction: vi.fn(),
-      setBudgetGoal: vi.fn(),
-      clearAllData: vi.fn(),
-      loading: false,
-    });
+    }));
 
     render(<BudgetProgress />);
 
@@ -66,7 +70,7 @@ describe('BudgetProgress', () => {
   });
 
   it('should show warning when spending exceeds 80%', () => {
-    vi.mocked(BudgetContext.useBudget).mockReturnValue({
+    vi.mocked(BudgetContext.useBudget).mockReturnValue(createMockBudgetContext({
       summary: {
         totalIncome: 10000,
         totalExpenses: 8500,
@@ -77,14 +81,7 @@ describe('BudgetProgress', () => {
         monthlyLimit: 10000,
         month: '2024-01',
       },
-      transactions: [],
-      addTransaction: vi.fn(),
-      updateTransaction: vi.fn(),
-      deleteTransaction: vi.fn(),
-      setBudgetGoal: vi.fn(),
-      clearAllData: vi.fn(),
-      loading: false,
-    });
+    }));
 
     render(<BudgetProgress />);
 
@@ -98,7 +95,7 @@ describe('BudgetProgress', () => {
   });
 
   it('should show over budget message when spending exceeds limit', () => {
-    vi.mocked(BudgetContext.useBudget).mockReturnValue({
+    vi.mocked(BudgetContext.useBudget).mockReturnValue(createMockBudgetContext({
       summary: {
         totalIncome: 10000,
         totalExpenses: 12000,
@@ -109,14 +106,7 @@ describe('BudgetProgress', () => {
         monthlyLimit: 10000,
         month: '2024-01',
       },
-      transactions: [],
-      addTransaction: vi.fn(),
-      updateTransaction: vi.fn(),
-      deleteTransaction: vi.fn(),
-      setBudgetGoal: vi.fn(),
-      clearAllData: vi.fn(),
-      loading: false,
-    });
+    }));
 
     render(<BudgetProgress />);
 
@@ -133,7 +123,7 @@ describe('BudgetProgress', () => {
   });
 
   it('should have proper accessibility attributes', () => {
-    vi.mocked(BudgetContext.useBudget).mockReturnValue({
+    vi.mocked(BudgetContext.useBudget).mockReturnValue(createMockBudgetContext({
       summary: {
         totalIncome: 10000,
         totalExpenses: 5000,
@@ -144,14 +134,7 @@ describe('BudgetProgress', () => {
         monthlyLimit: 10000,
         month: '2024-01',
       },
-      transactions: [],
-      addTransaction: vi.fn(),
-      updateTransaction: vi.fn(),
-      deleteTransaction: vi.fn(),
-      setBudgetGoal: vi.fn(),
-      clearAllData: vi.fn(),
-      loading: false,
-    });
+    }));
 
     render(<BudgetProgress />);
 

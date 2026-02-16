@@ -61,6 +61,11 @@ export function TransactionRow({ transaction, onDelete, onEdit }: TransactionRow
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {categoryIcon} {categoryName}
               </p>
+              {transaction.__syncStatus === 'queued' && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                  Queued
+                </span>
+              )}
             </div>
           </div>
           <div className={`text-sm font-semibold ${amountColorClass} flex-shrink-0 text-right`}>
@@ -139,6 +144,11 @@ export function TransactionRow({ transaction, onDelete, onEdit }: TransactionRow
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {categoryIcon} {categoryName}
                 </p>
+                {transaction.__syncStatus === 'queued' && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                    Queued
+                  </span>
+                )}
               </div>
             </div>
 

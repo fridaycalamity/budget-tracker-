@@ -51,6 +51,9 @@ export interface Transaction {
   category: string; // Category ID (migrated from TransactionCategory)
   date: string; // ISO 8601 date string (YYYY-MM-DD)
   createdAt: string; // ISO 8601 timestamp
+  updatedAt?: string; // ISO 8601 timestamp
+  __localOnly?: boolean; // local-only marker for offline queue
+  __syncStatus?: 'synced' | 'queued' | 'syncing'; // local sync status
 }
 
 /**
@@ -126,6 +129,11 @@ export interface BudgetContextValue {
   budgetGoal: BudgetGoal | null;
   setBudgetGoal: (goal: BudgetGoal | null) => void;
   clearAllData: () => void;
+  retrySync: () => Promise<void>;
+  clearLocalCache: () => Promise<void>;
+  queuedCount: number;
+  isSyncing: boolean;
+  isOffline: boolean;
   summary: FinancialSummary;
   loading: boolean;
 }

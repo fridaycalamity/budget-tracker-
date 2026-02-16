@@ -1,26 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useBudget } from '../contexts';
 
 export function OfflineBanner() {
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const { isOffline, queuedCount, isSyncing } = useBudget();
 
-  useEffect(() => {
-    const handleOffline = () => setIsOffline(true);
-    const handleOnline = () => setIsOffline(false);
-
-    window.addEventListener('offline', handleOffline);
-    window.addEventListener('online', handleOnline);
-
-    return () => {
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('online', handleOnline);
-    };
-  }, []);
-
-  if (!isOffline) return null;
+  if (!isOffline && queuedCount === 0 && !isSyncing) return null;
 
   return (
     <div className="bg-amber-500 dark:bg-amber-600 text-white text-center py-2 px-4 text-sm font-medium">
-      You're offline — using cached data
+      {isOffline ? "You're offline — using cached data" : 'Back online'}
+      {queuedCount > 0 ? ` • ${queuedCount} change${queuedCount === 1 ? '' : 's'} queued` : ''}
+      {isSyncing ? ' • Syncing changes...' : ''}
     </div>
   );
 }
