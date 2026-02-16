@@ -7,7 +7,7 @@ import {
   AuthProvider,
   useAuth,
 } from './contexts';
-import { Header, AddTransactionButton, ToastContainer } from './components';
+import { Header, AddTransactionButton, ToastContainer, InstallPWA, OfflineBanner } from './components';
 import { Dashboard, TransactionList, BudgetGoals, Settings, Auth } from './pages';
 import { DataMigrationBanner } from './components/DataMigrationBanner';
 import './App.css';
@@ -38,7 +38,8 @@ function AppRoutes() {
         path="/*"
         element={
           <ProtectedRoute>
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 overflow-x-hidden">
+              <OfflineBanner />
               <Header />
               <DataMigrationBanner />
               <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -53,6 +54,8 @@ function AppRoutes() {
               <AddTransactionButton />
               {/* Toast notifications */}
               <ToastContainer />
+              {/* PWA install prompt */}
+              <InstallPWA />
             </div>
           </ProtectedRoute>
         }

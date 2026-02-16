@@ -34,7 +34,7 @@ export function SpendingChart() {
   // Handle empty data state
   if (categoriesWithExpenses.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 transition-colors duration-200">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           Spending by Category
         </h2>
@@ -141,7 +141,7 @@ export function SpendingChart() {
       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
         Spending by Category
       </h2>
-      <div className="relative" style={{ maxHeight: '400px' }}>
+      <div className="relative" style={{ maxHeight: '300px' }}>
         <Doughnut data={chartData} options={options} />
       </div>
     </div>

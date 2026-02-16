@@ -170,7 +170,7 @@ export function TransactionModal({ isOpen, onClose, editTransaction }: Transacti
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fadeIn"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -182,10 +182,10 @@ export function TransactionModal({ isOpen, onClose, editTransaction }: Transacti
       {/* Modal Content */}
       <div
         ref={modalRef}
-        className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-slideUp"
+        className="relative bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] overflow-y-auto animate-slideUp"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
           <h2
             id="modal-title"
             className="text-xl font-semibold text-gray-900 dark:text-white"
@@ -194,7 +194,7 @@ export function TransactionModal({ isOpen, onClose, editTransaction }: Transacti
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label="Close modal"
           >
             <svg
@@ -214,7 +214,7 @@ export function TransactionModal({ isOpen, onClose, editTransaction }: Transacti
         </div>
 
         {/* Form Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <TransactionForm onSuccess={handleSuccess} editTransaction={editTransaction} />
         </div>
       </div>

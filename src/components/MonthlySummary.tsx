@@ -157,17 +157,17 @@ export function MonthlySummary() {
   // Empty state
   if (!hasData) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 animate-fadeIn">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-8 animate-fadeIn">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           Monthly Overview
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
           Track your financial trends over time
         </p>
 
-        <div className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
+        <div className="flex flex-col items-center justify-center py-6 sm:py-12 text-gray-500 dark:text-gray-400">
           <svg
-            className="w-16 h-16 mb-4"
+            className="w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -180,7 +180,7 @@ export function MonthlySummary() {
               d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
             />
           </svg>
-          <p className="text-center text-lg font-medium mb-2">
+          <p className="text-center text-base sm:text-lg font-medium mb-2">
             Keep tracking!
           </p>
           <p className="text-center text-sm">
@@ -192,7 +192,7 @@ export function MonthlySummary() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 animate-fadeIn">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 animate-fadeIn">
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -204,12 +204,12 @@ export function MonthlySummary() {
       </div>
 
       {/* Chart */}
-      <div className="mb-6" style={{ height: '300px' }}>
+      <div className="mb-4 sm:mb-6 h-[200px] sm:h-[300px]">
         <Bar data={chartData} options={chartOptions} />
       </div>
 
       {/* Net difference labels */}
-      <div className="grid grid-cols-6 gap-2 mb-6">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4 sm:mb-6">
         {monthlyTotals.map((month) => (
           <div key={month.month} className="text-center">
             <p
@@ -235,7 +235,7 @@ export function MonthlySummary() {
           </p>
           {bestMonth && (
             <>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 break-all">
                 {formatCurrency(bestMonth.net)}
               </p>
               <p className="text-xs text-green-700 dark:text-green-300 mt-1">
@@ -250,7 +250,7 @@ export function MonthlySummary() {
           <p className="text-xs font-medium text-blue-800 dark:text-blue-300 mb-1">
             Average Monthly Spending
           </p>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 break-all">
             {formatCurrency(averageSpending)}
           </p>
           <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
@@ -267,7 +267,7 @@ export function MonthlySummary() {
             <>
               <div className="flex items-center gap-2">
                 <p
-                  className={`text-2xl font-bold ${
+                  className={`text-xl sm:text-2xl font-bold ${
                     spendingTrend.direction === 'up'
                       ? 'text-red-600 dark:text-red-400'
                       : spendingTrend.direction === 'down'

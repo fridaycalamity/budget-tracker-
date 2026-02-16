@@ -111,7 +111,7 @@ export function CategoryForm({ isOpen, onClose, editCategory }: CategoryFormProp
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fadeIn"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           handleCancel();
@@ -125,7 +125,7 @@ export function CategoryForm({ isOpen, onClose, editCategory }: CategoryFormProp
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       {/* Dialog Content */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 animate-slideUp max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-w-md p-4 sm:p-6 animate-slideUp sm:max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h3
@@ -193,7 +193,7 @@ export function CategoryForm({ isOpen, onClose, editCategory }: CategoryFormProp
                   <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
                     {category}
                   </h4>
-                  <div className="grid grid-cols-10 gap-1">
+                  <div className="grid grid-cols-8 sm:grid-cols-10 gap-1">
                     {emojis.map((emoji) => (
                       <button
                         key={emoji}

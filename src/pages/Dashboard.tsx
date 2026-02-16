@@ -87,7 +87,7 @@ export function Dashboard() {
 
       {/* Recent Transactions */}
       <div 
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6"
         role="region"
         aria-label="Recent transactions"
       >

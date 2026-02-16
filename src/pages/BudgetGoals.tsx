@@ -63,7 +63,7 @@ export function BudgetGoals() {
       </div>
 
       {/* Budget Goal Form */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Set Monthly Budget
         </h3>

@@ -86,7 +86,7 @@ export function Settings() {
       <CategoryManager />
 
       {/* Data Management Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           Data Management
         </h3>

@@ -27,12 +27,12 @@ export function SummaryCard({ title, amount, color }: SummaryCardProps) {
 
   return (
     <div
-      className={`p-6 rounded-lg border-2 ${colorClasses[color]} transition-all duration-200 hover:shadow-md`}
+      className={`p-4 sm:p-6 rounded-lg border-2 ${colorClasses[color]} transition-all duration-200 hover:shadow-md`}
     >
       <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
         {title}
       </h3>
-      <p className={`text-3xl font-bold ${textColorClasses[color]}`}>
+      <p className={`text-2xl sm:text-3xl font-bold ${textColorClasses[color]} break-all`}>
         {formatCurrency(amount)}
       </p>
     </div>

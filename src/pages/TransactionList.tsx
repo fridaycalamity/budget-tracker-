@@ -89,7 +89,7 @@ export function TransactionList() {
         </div>
 
         <div 
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 sm:p-12 text-center"
           role="status"
           aria-live="polite"
         >
@@ -135,7 +135,7 @@ export function TransactionList() {
         <SortControls sortConfig={sortConfig} onSortChange={setSortConfig} />
 
         <div 
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 sm:p-12 text-center"
           role="status"
           aria-live="polite"
         >

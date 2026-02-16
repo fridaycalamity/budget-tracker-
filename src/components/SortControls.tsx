@@ -52,7 +52,7 @@ export function SortControls({ sortConfig, onSortChange }: SortControlsProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         Sort By
       </h3>

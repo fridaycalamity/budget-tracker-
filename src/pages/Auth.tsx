@@ -91,7 +91,7 @@ export function Auth() {
         </div>
 
         {/* Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
           {/* Google OAuth */}
           <button
             type="button"
