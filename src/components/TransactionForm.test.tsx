@@ -1,18 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '../test/testUtils';
 import { TransactionForm } from './TransactionForm';
-import { BudgetProvider, ToastProvider, CategoryProvider } from '../contexts';
-
-// Helper to render component with context
-const renderWithContext = (ui: React.ReactElement) => {
-  return render(
-    <ToastProvider>
-      <CategoryProvider>
-        <BudgetProvider>{ui}</BudgetProvider>
-      </CategoryProvider>
-    </ToastProvider>
-  );
-};
 
 describe('TransactionForm', () => {
   beforeEach(() => {
@@ -21,7 +9,7 @@ describe('TransactionForm', () => {
   });
 
   it('renders all form fields', () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     // Check for all form elements
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
@@ -34,14 +22,14 @@ describe('TransactionForm', () => {
   });
 
   it('defaults to expense type', () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const expenseRadio = screen.getByLabelText(/expense/i) as HTMLInputElement;
     expect(expenseRadio.checked).toBe(true);
   });
 
   it('defaults to current date', () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const dateInput = screen.getByLabelText(/date/i) as HTMLInputElement;
     // Check that the date is set and is a valid date format (YYYY-MM-DD)
@@ -60,7 +48,7 @@ describe('TransactionForm', () => {
   });
 
   it('shows validation error for empty description', async () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const submitButton = screen.getByRole('button', { name: /add transaction/i });
     fireEvent.click(submitButton);
@@ -71,7 +59,7 @@ describe('TransactionForm', () => {
   });
 
   it('shows validation error for empty amount', async () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const descriptionInput = screen.getByLabelText(/description/i);
     fireEvent.change(descriptionInput, { target: { value: 'Test transaction' } });
@@ -85,7 +73,7 @@ describe('TransactionForm', () => {
   });
 
   it('prevents entering negative amount', () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const amountInput = screen.getByLabelText(/amount/i) as HTMLInputElement;
 
@@ -97,7 +85,7 @@ describe('TransactionForm', () => {
   });
 
   it('shows validation error for zero amount', async () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const descriptionInput = screen.getByLabelText(/description/i);
     const amountInput = screen.getByLabelText(/amount/i);
@@ -114,7 +102,7 @@ describe('TransactionForm', () => {
   });
 
   it('allows valid amount with up to 2 decimal places', () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const amountInput = screen.getByLabelText(/amount/i) as HTMLInputElement;
 
@@ -123,7 +111,7 @@ describe('TransactionForm', () => {
   });
 
   it('prevents amount with more than 2 decimal places during input', () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const amountInput = screen.getByLabelText(/amount/i) as HTMLInputElement;
 
@@ -133,7 +121,7 @@ describe('TransactionForm', () => {
   });
 
   it('allows switching between income and expense', () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const incomeRadio = screen.getByLabelText(/income/i) as HTMLInputElement;
     const expenseRadio = screen.getByLabelText(/expense/i) as HTMLInputElement;
@@ -154,7 +142,7 @@ describe('TransactionForm', () => {
   });
 
   it('allows selecting different categories', () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const categorySelect = screen.getByLabelText(/category/i) as HTMLSelectElement;
 
@@ -168,7 +156,7 @@ describe('TransactionForm', () => {
 
   it('successfully submits valid form and clears fields', async () => {
     const onSuccess = vi.fn();
-    renderWithContext(<TransactionForm onSuccess={onSuccess} />);
+    render(<TransactionForm onSuccess={onSuccess} />);
 
     // Fill in the form
     const descriptionInput = screen.getByLabelText(/description/i);
@@ -202,7 +190,7 @@ describe('TransactionForm', () => {
 
   it('trims whitespace from description', async () => {
     const onSuccess = vi.fn();
-    renderWithContext(<TransactionForm onSuccess={onSuccess} />);
+    render(<TransactionForm onSuccess={onSuccess} />);
 
     const descriptionInput = screen.getByLabelText(/description/i);
     const amountInput = screen.getByLabelText(/amount/i);
@@ -219,7 +207,7 @@ describe('TransactionForm', () => {
   });
 
   it('shows validation error for description exceeding 200 characters', async () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const descriptionInput = screen.getByLabelText(/description/i);
     const longDescription = 'a'.repeat(201);
@@ -235,7 +223,7 @@ describe('TransactionForm', () => {
   });
 
   it('clears validation errors when user starts typing', async () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     // Submit empty form to trigger validation errors
     const submitButton = screen.getByRole('button', { name: /add transaction/i });
@@ -256,7 +244,7 @@ describe('TransactionForm', () => {
   });
 
   it('shows submitting state on button', async () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const descriptionInput = screen.getByLabelText(/description/i);
     const amountInput = screen.getByLabelText(/amount/i);
@@ -272,7 +260,7 @@ describe('TransactionForm', () => {
   });
 
   it('has proper ARIA attributes for accessibility', () => {
-    renderWithContext(<TransactionForm />);
+    render(<TransactionForm />);
 
     const descriptionInput = screen.getByLabelText(/description/i);
     const amountInput = screen.getByLabelText(/amount/i);

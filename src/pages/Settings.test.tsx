@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '../test/testUtils';
 import userEvent from '@testing-library/user-event';
 import { Settings } from './Settings';
-import { BudgetProvider, ToastProvider, CategoryProvider } from '../contexts';
 
 /**
  * Test suite for Settings page component
@@ -11,15 +10,7 @@ import { BudgetProvider, ToastProvider, CategoryProvider } from '../contexts';
 
 // Helper to render Settings with context
 function renderSettings() {
-  return render(
-    <ToastProvider>
-      <CategoryProvider>
-        <BudgetProvider>
-          <Settings />
-        </BudgetProvider>
-      </CategoryProvider>
-    </ToastProvider>
-  );
+  return render(<Settings />);
 }
 
 describe('Settings', () => {

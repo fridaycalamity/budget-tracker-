@@ -1,14 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '../test/testUtils';
 import userEvent from '@testing-library/user-event';
 import { FilterBar } from './FilterBar';
-import { CategoryProvider } from '../contexts';
 import type { TransactionFilters } from '../types';
-
-// Helper to render with CategoryProvider
-const renderWithProvider = (ui: React.ReactElement) => {
-  return render(<CategoryProvider>{ui}</CategoryProvider>);
-};
 
 describe('FilterBar', () => {
   const defaultFilters: TransactionFilters = {
@@ -22,7 +16,7 @@ describe('FilterBar', () => {
 
   it('renders all filter controls', () => {
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     // Check for filter labels
     expect(screen.getByText('Filters')).toBeInTheDocument();
@@ -43,7 +37,7 @@ describe('FilterBar', () => {
       },
     };
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
 
     // Check that values are displayed
     expect(screen.getByLabelText('Filter by transaction type')).toHaveValue('income');
@@ -55,7 +49,7 @@ describe('FilterBar', () => {
   it('calls onFiltersChange when type filter changes', async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const typeSelect = screen.getByLabelText('Filter by transaction type');
     await user.selectOptions(typeSelect, 'income');
@@ -69,7 +63,7 @@ describe('FilterBar', () => {
   it('calls onFiltersChange when category filter changes', async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const categorySelect = screen.getByLabelText('Filter by category');
     // Get the Food category option (first non-"all" option with Food in text)
@@ -88,7 +82,7 @@ describe('FilterBar', () => {
   it('calls onFiltersChange when start date changes', async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const startDateInput = screen.getByLabelText('Filter by start date');
     await user.type(startDateInput, '2024-01-01');
@@ -105,7 +99,7 @@ describe('FilterBar', () => {
   it('calls onFiltersChange when end date changes', async () => {
     const user = userEvent.setup();
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const endDateInput = screen.getByLabelText('Filter by end date');
     await user.type(endDateInput, '2024-01-31');
@@ -129,14 +123,14 @@ describe('FilterBar', () => {
       },
     };
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
 
     expect(screen.getByText('Clear All')).toBeInTheDocument();
   });
 
   it('does not show "Clear All" button when no filters are active', () => {
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     expect(screen.queryByText('Clear All')).not.toBeInTheDocument();
   });
@@ -152,7 +146,7 @@ describe('FilterBar', () => {
       },
     };
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
 
     const clearButton = screen.getByText('Clear All');
     await user.click(clearButton);
@@ -169,7 +163,7 @@ describe('FilterBar', () => {
 
   it('includes all transaction categories in category dropdown', () => {
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const categorySelect = screen.getByLabelText('Filter by category');
     const optionTexts = Array.from(categorySelect.querySelectorAll('option')).map(
@@ -192,7 +186,7 @@ describe('FilterBar', () => {
 
   it('includes all type options in type dropdown', () => {
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={defaultFilters} onFiltersChange={onFiltersChange} />);
 
     const typeSelect = screen.getByLabelText('Filter by transaction type');
     const options = Array.from(typeSelect.querySelectorAll('option')).map(
@@ -213,7 +207,7 @@ describe('FilterBar', () => {
       },
     };
     const onFiltersChange = vi.fn();
-    renderWithProvider(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
+    render(<FilterBar filters={filters} onFiltersChange={onFiltersChange} />);
 
     const startDateInput = screen.getByLabelText('Filter by start date');
     await user.clear(startDateInput);

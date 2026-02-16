@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '../test/testUtils';
 import { TransactionModal } from './TransactionModal';
-import { BudgetProvider, ToastProvider, CategoryProvider } from '../contexts';
 
 /**
  * Test suite for TransactionModal component
@@ -43,15 +42,7 @@ describe('TransactionModal', () => {
   });
 
   const renderModal = (isOpen: boolean) => {
-    return render(
-      <ToastProvider>
-        <CategoryProvider>
-          <BudgetProvider>
-            <TransactionModal isOpen={isOpen} onClose={mockOnClose} />
-          </BudgetProvider>
-        </CategoryProvider>
-      </ToastProvider>
-    );
+    return render(<TransactionModal isOpen={isOpen} onClose={mockOnClose} />);
   };
 
   describe('Rendering', () => {
@@ -179,11 +170,7 @@ describe('TransactionModal', () => {
       
       // Close modal
       rerender(
-        <ToastProvider>
-          <BudgetProvider>
-            <TransactionModal isOpen={false} onClose={mockOnClose} />
-          </BudgetProvider>
-        </ToastProvider>
+        <TransactionModal isOpen={false} onClose={mockOnClose} />
       );
       
       // Body should be restored
@@ -245,31 +232,19 @@ describe('TransactionModal', () => {
       
       // Open
       rerender(
-        <ToastProvider>
-          <BudgetProvider>
-            <TransactionModal isOpen={true} onClose={mockOnClose} />
-          </BudgetProvider>
-        </ToastProvider>
+        <TransactionModal isOpen={true} onClose={mockOnClose} />
       );
       expect(screen.getByRole('dialog')).toBeInTheDocument();
       
       // Close
       rerender(
-        <ToastProvider>
-          <BudgetProvider>
-            <TransactionModal isOpen={false} onClose={mockOnClose} />
-          </BudgetProvider>
-        </ToastProvider>
+        <TransactionModal isOpen={false} onClose={mockOnClose} />
       );
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       
       // Open again
       rerender(
-        <ToastProvider>
-          <BudgetProvider>
-            <TransactionModal isOpen={true} onClose={mockOnClose} />
-          </BudgetProvider>
-        </ToastProvider>
+        <TransactionModal isOpen={true} onClose={mockOnClose} />
       );
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });

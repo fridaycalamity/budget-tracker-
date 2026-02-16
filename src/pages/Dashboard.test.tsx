@@ -172,7 +172,7 @@ describe('Dashboard', () => {
     renderDashboard();
     
     // Should display only 10 transactions
-    const transactionElements = screen.getAllByText(/Transaction \d+/);
+    const transactionElements = screen.getAllByRole('listitem');
     expect(transactionElements.length).toBe(10);
   });
 

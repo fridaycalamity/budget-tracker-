@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '../test/testUtils';
 import userEvent from '@testing-library/user-event';
 import { TransactionModal } from './TransactionModal';
-import { BudgetProvider, ToastProvider, CategoryProvider, useBudget } from '../contexts';
+import { useBudget } from '../contexts';
 
 /**
  * Integration test for TransactionModal with real TransactionForm
@@ -36,15 +36,7 @@ describe('TransactionModal Integration', () => {
   it('should successfully add a transaction and close modal', async () => {
     const user = userEvent.setup();
     
-    render(
-      <ToastProvider>
-        <CategoryProvider>
-          <CategoryProvider><BudgetProvider>
-            <TestWrapper />
-          </BudgetProvider></CategoryProvider>
-        </CategoryProvider>
-      </ToastProvider>
-    );
+    render(<TestWrapper />);
 
     // Get initial transaction count
     const initialCount = parseInt(screen.getByTestId('transaction-count').textContent || '0');
@@ -83,13 +75,7 @@ describe('TransactionModal Integration', () => {
   it('should not close modal if form validation fails', async () => {
     const user = userEvent.setup();
     
-    render(
-      <ToastProvider>
-        <CategoryProvider><BudgetProvider>
-          <TestWrapper />
-        </BudgetProvider></CategoryProvider>
-      </ToastProvider>
-    );
+    render(<TestWrapper />);
 
     // Open modal
     await user.click(screen.getByText('Open Modal'));
@@ -114,13 +100,7 @@ describe('TransactionModal Integration', () => {
   it('should close modal when clicking backdrop', async () => {
     const user = userEvent.setup();
     
-    render(
-      <ToastProvider>
-        <CategoryProvider><BudgetProvider>
-          <TestWrapper />
-        </BudgetProvider></CategoryProvider>
-      </ToastProvider>
-    );
+    render(<TestWrapper />);
 
     // Open modal
     await user.click(screen.getByText('Open Modal'));
@@ -142,13 +122,7 @@ describe('TransactionModal Integration', () => {
   it('should close modal when pressing Escape key', async () => {
     const user = userEvent.setup();
     
-    render(
-      <ToastProvider>
-        <CategoryProvider><BudgetProvider>
-          <TestWrapper />
-        </BudgetProvider></CategoryProvider>
-      </ToastProvider>
-    );
+    render(<TestWrapper />);
 
     // Open modal
     await user.click(screen.getByText('Open Modal'));

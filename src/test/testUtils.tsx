@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { render, type RenderOptions } from '@testing-library/react';
 import { BudgetProvider, ThemeProvider, ToastProvider, CategoryProvider } from '../contexts';
+import { createMockAuth, setMockAuth } from './mockAuth';
 
 /**
  * Custom render function that wraps components with all necessary providers
@@ -26,4 +27,4 @@ const customRender = (
 ) => render(ui, { wrapper: AllTheProviders, ...options });
 
 export * from '@testing-library/react';
-export { customRender as render };
+export { customRender as render, createMockAuth, setMockAuth };

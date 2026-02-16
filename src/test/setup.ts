@@ -1,6 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import '@testing-library/jest-dom';
 import { beforeEach, vi } from 'vitest';
+import { mockUseAuth, resetMockAuth } from './mockAuth';
+
+vi.mock('../contexts/AuthContext', async () => {
+  const actual = await vi.importActual<typeof import('../contexts/AuthContext')>('../contexts/AuthContext');
+  return {
+    ...actual,
+    useAuth: mockUseAuth,
+  };
+});
 
 // Mock localStorage for tests
 const localStorageMock = {
@@ -91,4 +100,5 @@ Object.defineProperty(HTMLCanvasElement.prototype, 'height', {
 // Clear localStorage before each test
 beforeEach(() => {
   localStorageMock.clear();
+  resetMockAuth();
 });

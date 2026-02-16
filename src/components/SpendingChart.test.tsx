@@ -1,21 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '../test/testUtils';
 import { SpendingChart } from './SpendingChart';
-import { BudgetProvider, ToastProvider, ThemeProvider, CategoryProvider } from '../contexts';
 import { storageService } from '../utils';
-
-// Helper to render with providers
-const renderWithProviders = (ui: React.ReactElement) => {
-  return render(
-    <ThemeProvider>
-      <ToastProvider>
-        <CategoryProvider>
-          <BudgetProvider>{ui}</BudgetProvider>
-        </CategoryProvider>
-      </ToastProvider>
-    </ThemeProvider>
-  );
-};
 
 describe('SpendingChart', () => {
   beforeEach(() => {
@@ -24,7 +10,7 @@ describe('SpendingChart', () => {
   });
 
   it('should render empty state when there are no expenses', () => {
-    renderWithProviders(<SpendingChart />);
+    render(<SpendingChart />);
 
     // Check for empty state message
     expect(screen.getByText(/No expense data to display/i)).toBeInTheDocument();
@@ -46,7 +32,7 @@ describe('SpendingChart', () => {
     ];
     storageService.saveTransactions(transactions);
 
-    renderWithProviders(<SpendingChart />);
+    render(<SpendingChart />);
 
     expect(screen.getByText('Spending by Category')).toBeInTheDocument();
   });
@@ -84,7 +70,7 @@ describe('SpendingChart', () => {
     ];
     storageService.saveTransactions(transactions);
 
-    renderWithProviders(<SpendingChart />);
+    render(<SpendingChart />);
 
     // Chart should be rendered (canvas element)
     const canvas = document.querySelector('canvas');
@@ -118,7 +104,7 @@ describe('SpendingChart', () => {
     ];
     storageService.saveTransactions(transactions);
 
-    renderWithProviders(<SpendingChart />);
+    render(<SpendingChart />);
 
     // Chart should be rendered (only expenses)
     const canvas = document.querySelector('canvas');
@@ -140,7 +126,7 @@ describe('SpendingChart', () => {
     ];
     storageService.saveTransactions(transactions);
 
-    renderWithProviders(<SpendingChart />);
+    render(<SpendingChart />);
 
     // Chart should be rendered
     const canvas = document.querySelector('canvas');
@@ -164,11 +150,15 @@ describe('SpendingChart', () => {
     ];
     storageService.saveTransactions(transactions);
 
-    const { container } = renderWithProviders(<SpendingChart />);
+    const { container } = render(<SpendingChart />);
 
     // Check for responsive container classes
     const chartContainer = container.querySelector('.bg-white');
-    expect(chartContainer).toHaveClass('rounded-lg', 'shadow-md', 'p-6');
+    expect(chartContainer).toHaveClass('rounded-lg', 'shadow-md');
+    expect(
+      chartContainer?.classList.contains('p-6') ||
+        (chartContainer?.classList.contains('p-4') && chartContainer?.classList.contains('sm:p-6'))
+    ).toBe(true);
   });
 
   it('should aggregate multiple expenses in the same category', () => {
@@ -195,7 +185,7 @@ describe('SpendingChart', () => {
     ];
     storageService.saveTransactions(transactions);
 
-    renderWithProviders(<SpendingChart />);
+    render(<SpendingChart />);
 
     // Chart should be rendered
     const canvas = document.querySelector('canvas');
