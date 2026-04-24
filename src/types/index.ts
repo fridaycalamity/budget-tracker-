@@ -131,6 +131,7 @@ export interface BudgetContextValue {
   clearAllData: () => void;
   retrySync: () => Promise<void>;
   clearLocalCache: () => Promise<void>;
+  forceRefreshFromServer: () => Promise<void>;
   queuedCount: number;
   isSyncing: boolean;
   isOffline: boolean;

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { CategoryProvider, useCategories } from './CategoryContext';
+import { ToastProvider } from './ToastContext';
 import { storageService } from '../utils/storage';
 import type { Transaction } from '../types';
 
@@ -27,6 +28,7 @@ vi.mock('../lib/supabase', () => ({
     from: vi.fn(() => ({
       select: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
+      upsert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -34,6 +36,17 @@ vi.mock('../lib/supabase', () => ({
     })),
   },
 }));
+
+// Helper: render with both ToastProvider (parent) and CategoryProvider (child)
+function createWrapper() {
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <ToastProvider>
+        <CategoryProvider>{children}</CategoryProvider>
+      </ToastProvider>
+    );
+  };
+}
 
 describe('CategoryContext', () => {
   beforeEach(() => {
@@ -43,7 +56,7 @@ describe('CategoryContext', () => {
   describe('initialization', () => {
     it('should initialize with default categories', async () => {
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -68,7 +81,7 @@ describe('CategoryContext', () => {
       vi.mocked(storageService.getCategories).mockReturnValue([customCategory]);
 
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -97,7 +110,7 @@ describe('CategoryContext', () => {
       vi.mocked(storageService.getTransactions).mockReturnValue(legacyTransactions);
 
       renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -110,7 +123,7 @@ describe('CategoryContext', () => {
       vi.mocked(storageService.getMigrationFlag).mockReturnValue(true);
 
       renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -122,7 +135,7 @@ describe('CategoryContext', () => {
   describe('addCategory', () => {
     it('should add a new custom category', async () => {
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -150,7 +163,7 @@ describe('CategoryContext', () => {
 
     it('should save custom categories to storage', async () => {
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -184,7 +197,7 @@ describe('CategoryContext', () => {
       vi.mocked(storageService.getCategories).mockReturnValue([customCategory]);
 
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -206,7 +219,7 @@ describe('CategoryContext', () => {
 
     it('should not update default categories', async () => {
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -241,7 +254,7 @@ describe('CategoryContext', () => {
       vi.mocked(storageService.getCategories).mockReturnValue([customCategory]);
 
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -260,7 +273,7 @@ describe('CategoryContext', () => {
 
     it('should not delete default categories', async () => {
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -306,7 +319,7 @@ describe('CategoryContext', () => {
       vi.mocked(storageService.getTransactions).mockReturnValue(transactions);
 
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -329,7 +342,7 @@ describe('CategoryContext', () => {
   describe('getCategoryById', () => {
     it('should return category by ID', async () => {
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -345,7 +358,7 @@ describe('CategoryContext', () => {
 
     it('should return undefined for non-existent ID', async () => {
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -360,7 +373,7 @@ describe('CategoryContext', () => {
   describe('getCategoriesByType', () => {
     it('should return income categories', async () => {
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -375,7 +388,7 @@ describe('CategoryContext', () => {
 
     it('should return expense categories', async () => {
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -390,7 +403,7 @@ describe('CategoryContext', () => {
 
     it('should return only "both" type categories', async () => {
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -417,7 +430,7 @@ describe('CategoryContext', () => {
       vi.mocked(storageService.getCategories).mockReturnValue([customCategory]);
 
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -445,7 +458,7 @@ describe('CategoryContext', () => {
       vi.mocked(storageService.getCategories).mockReturnValue([customCategory]);
 
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {
@@ -464,7 +477,7 @@ describe('CategoryContext', () => {
       vi.mocked(storageService.getCategories).mockReturnValue([]);
       
       const { result } = renderHook(() => useCategories(), {
-        wrapper: CategoryProvider,
+        wrapper: createWrapper(),
       });
 
       await waitFor(() => {

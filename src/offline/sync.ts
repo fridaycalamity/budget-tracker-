@@ -50,16 +50,6 @@ async function applyOutboxItem(userId: string, item: OutboxItem): Promise<void> 
   if (error) throw error;
 }
 
-function getRetryDelayMs(retryCount: number): number {
-  return Math.min(500 * 2 ** retryCount, 8000);
-}
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
 export async function processOutboxQueue(userId: string): Promise<SyncResult> {
   const queue = await getOutboxItems(userId);
 
@@ -77,15 +67,16 @@ export async function processOutboxQueue(userId: string): Promise<SyncResult> {
       processed += 1;
     } catch (error) {
       failed += 1;
-
       await updateOutboxItem(userId, item.id, { retryCount: item.retryCount + 1 });
 
       if (isOfflineNetworkError(error)) {
+        // Network is down — stop and retry the rest later
         break;
       }
 
-      await delay(getRetryDelayMs(item.retryCount));
-      break;
+      // Non-network error (constraint, auth, etc.) — skip this item
+      // but keep processing the rest of the queue.
+      // Retrying immediately with the same error won't help.
     }
   }
 

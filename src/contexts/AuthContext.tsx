@@ -84,10 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return { error: 'Not authenticated' };
 
     try {
-      // Import transactions
+      // Import transactions using upsert with the original client-generated IDs.
+      // This prevents duplicates if import is retried after a partial failure.
       const localTransactions = storageService.getTransactions();
       if (localTransactions.length > 0) {
         const transactionsToInsert = localTransactions.map((t) => ({
+          id: t.id,
           description: t.description,
           amount: t.amount,
           type: t.type,
@@ -97,11 +99,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           created_at: t.createdAt,
         }));
 
-        const { error: txError } = await supabase.from('transactions').insert(transactionsToInsert);
+        const { error: txError } = await supabase
+          .from('transactions')
+          .upsert(transactionsToInsert, { onConflict: 'id' });
         if (txError) throw txError;
       }
 
-      // Import custom categories
+      // Import custom categories using upsert (same IDs, prevent duplicates)
       const localCategories = storageService.getCategories();
       if (localCategories.length > 0) {
         const categoriesToInsert = localCategories.map((c) => ({
@@ -114,23 +118,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           user_id: user.id,
         }));
 
-        const { error: catError } = await supabase.from('categories').insert(categoriesToInsert);
+        const { error: catError } = await supabase
+          .from('categories')
+          .upsert(categoriesToInsert, { onConflict: 'id' });
         if (catError) throw catError;
       }
 
       // Import budget goal as budget_limit in user_settings
       const localBudgetGoal = storageService.getBudgetGoal();
       if (localBudgetGoal) {
-        await supabase.from('user_settings').upsert(
+        const { error: settingsError } = await supabase.from('user_settings').upsert(
           {
             user_id: user.id,
             budget_limit: localBudgetGoal.monthlyLimit,
           },
           { onConflict: 'user_id' }
         );
+        if (settingsError) throw settingsError;
       }
 
-      // Clear localStorage after successful import
+      // Clear localStorage only after ALL imports succeeded
       storageService.clearAll();
       setHasPendingLocalData(false);
 

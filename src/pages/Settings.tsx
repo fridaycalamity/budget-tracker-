@@ -14,7 +14,7 @@ import { CategoryManager } from '../components';
  * Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6
  */
 export function Settings() {
-  const { clearAllData, retrySync, clearLocalCache, queuedCount, isSyncing } = useBudget();
+  const { clearAllData, retrySync, clearLocalCache, forceRefreshFromServer, queuedCount, isSyncing } = useBudget();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
@@ -55,10 +55,18 @@ export function Settings() {
 
   const handleClearLocalCache = async () => {
     const confirmed = window.confirm(
-      'Clear local offline cache? Queued offline changes will be removed from this device.'
+      'Clear local offline cache? This will remove all locally cached transactions. You\'ll need to refresh the page to reload data from the server.'
     );
     if (!confirmed) return;
     await clearLocalCache();
+  };
+
+  const handleForceRefresh = async () => {
+    const confirmed = window.confirm(
+      'Re-sync all data from the server? This will replace your local data with a fresh copy from the cloud. Use this if your numbers don\'t match another device.'
+    );
+    if (!confirmed) return;
+    await forceRefreshFromServer();
   };
 
   return (
@@ -127,6 +135,14 @@ export function Settings() {
               {isSyncing ? 'Syncing...' : 'Retry Sync'}
             </button>
             <button
+              onClick={handleForceRefresh}
+              disabled={isSyncing}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              aria-label="Force refresh from server"
+            >
+              {isSyncing ? 'Refreshing...' : 'Refresh from Server'}
+            </button>
+            <button
               onClick={handleClearLocalCache}
               className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
               aria-label="Clear local cache"
@@ -134,6 +150,10 @@ export function Settings() {
               Clear Local Cache
             </button>
           </div>
+          <p className="text-xs text-gray-500 dark:text-gray-500">
+            <strong>Retry Sync</strong> — pushes queued offline changes to the server.{' '}
+            <strong>Refresh from Server</strong> — replaces local data with a fresh copy from the cloud. Use if numbers don't match another device.
+          </p>
         </div>
       </div>
 

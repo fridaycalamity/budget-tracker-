@@ -9,6 +9,7 @@ import {
   migrateTransactions,
 } from '../utils/categoryMigration';
 import { useAuth } from './AuthContext';
+import { useToast } from './ToastContext';
 import { supabase } from '../lib/supabase';
 
 const CategoryContext = createContext<CategoryContextValue | undefined>(undefined);
@@ -27,6 +28,7 @@ function mapDbToCategory(row: Record<string, unknown>): Category {
 
 export function CategoryProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -131,6 +133,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
           setCategories((prev) => [...prev, newCategory]);
         } catch (error) {
           console.error('Error adding category:', error);
+          showToast('Failed to add category to server.', 'error');
         }
       } else {
         setCategories((prev) => {
@@ -173,6 +176,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
           );
         } catch (error) {
           console.error('Error updating category:', error);
+          showToast('Failed to update category on server.', 'error');
         }
       } else {
         setCategories((prev) => {
@@ -226,6 +230,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
           setCategories((prev) => prev.filter((cat) => cat.id !== id));
         } catch (error) {
           console.error('Error deleting category:', error);
+          showToast('Failed to delete category from server.', 'error');
         }
       } else {
         // Reassign transactions in localStorage

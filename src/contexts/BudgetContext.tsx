@@ -177,15 +177,21 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
 
       if ((await getOutboxSize(userId)) > 0) {
         await syncOutbox();
+        // syncOutbox already fetched, merged, and saved — just reload from local
+        const afterSync = await offlineDb.getTransactions(userId);
+        const withStatus = await withQueueStatus(userId, afterSync);
+        setTransactions(withStatus);
+        await persistUserTransactions(userId, withStatus);
+      } else {
+        // No outbox — normal fetch + merge
+        const remoteTransactions = await fetchRemoteTransactions(userId);
+        const newestLocal = await offlineDb.getTransactions(userId);
+        const merged = mergeTransactions(newestLocal, remoteTransactions);
+        const mergedWithStatus = await withQueueStatus(userId, merged);
+
+        setTransactions(mergedWithStatus);
+        await persistUserTransactions(userId, mergedWithStatus);
       }
-
-      const remoteTransactions = await fetchRemoteTransactions(userId);
-      const newestLocal = await offlineDb.getTransactions(userId);
-      const merged = mergeTransactions(newestLocal, remoteTransactions);
-      const mergedWithStatus = await withQueueStatus(userId, merged);
-
-      setTransactions(mergedWithStatus);
-      await persistUserTransactions(userId, mergedWithStatus);
 
       // Fetch user_settings for budget_limit
       const { data: settings, error: settingsError } = await supabase
@@ -311,20 +317,18 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
         await persistUserTransactions(user.id, updated);
         showToast('Transaction added successfully!', 'success');
       } catch (error) {
-        if (isNetworkError(error)) {
-          const queued: Transaction[] = optimistic.map((tx) =>
-            tx.id === newTransaction.id
-              ? { ...tx, __syncStatus: 'queued' as const, __localOnly: true }
-              : tx
-          );
-          setTransactions(queued);
-          await persistUserTransactions(user.id, queued);
-          await queueMutation('transaction.create', newTransaction.id, newTransaction);
-          showToast('Offline: transaction queued for sync.', 'success');
-        } else {
-          console.error('Error adding transaction:', error);
-          showToast('Failed to save transaction to server.', 'error');
-        }
+        // Queue for retry on ANY failure (network or server error).
+        // Without this, transactions saved locally but rejected by Supabase
+        // (e.g. 500, auth error, timeout) are permanently lost from the cloud.
+        const queued: Transaction[] = optimistic.map((tx) =>
+          tx.id === newTransaction.id
+            ? { ...tx, __syncStatus: 'queued' as const, __localOnly: true }
+            : tx
+        );
+        setTransactions(queued);
+        await persistUserTransactions(user.id, queued);
+        await queueMutation('transaction.create', newTransaction.id, newTransaction);
+        showToast('Offline: transaction queued for sync.', 'success');
       }
       return;
     }
@@ -385,18 +389,14 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
         await persistUserTransactions(user.id, next);
         showToast('Transaction updated successfully!', 'success');
       } catch (error) {
-        if (isNetworkError(error)) {
-          const queued: Transaction[] = optimistic.map((t) =>
-            t.id === id ? { ...t, __syncStatus: 'queued' as const, __localOnly: true } : t
-          );
-          setTransactions(queued);
-          await persistUserTransactions(user.id, queued);
-          await queueMutation('transaction.update', id, updatedTransaction);
-          showToast('Offline: update queued for sync.', 'success');
-        } else {
-          console.error('Error updating transaction:', error);
-          showToast('Failed to update transaction on server.', 'error');
-        }
+        // Queue for retry on ANY failure (same rationale as addTransaction above).
+        const queued: Transaction[] = optimistic.map((t) =>
+          t.id === id ? { ...t, __syncStatus: 'queued' as const, __localOnly: true } : t
+        );
+        setTransactions(queued);
+        await persistUserTransactions(user.id, queued);
+        await queueMutation('transaction.update', id, updatedTransaction);
+        showToast('Offline: update queued for sync.', 'success');
       }
       return;
     }
@@ -430,15 +430,10 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
         if (error) throw error;
         showToast('Transaction deleted successfully!', 'success');
       } catch (error) {
-        if (isNetworkError(error)) {
-          await queueMutation('transaction.delete', id, { id });
-          showToast('Offline: deletion queued for sync.', 'success');
-        } else {
-          console.error('Error deleting transaction:', error);
-          setTransactions(previous);
-          await persistUserTransactions(user.id, previous);
-          showToast('Failed to delete transaction from server.', 'error');
-        }
+        // Restore the deleted transaction locally since the server delete failed.
+        setTransactions(previous);
+        await persistUserTransactions(user.id, previous);
+        showToast('Failed to delete from server. Keeping local copy.', 'error');
       }
       return;
     }
@@ -489,7 +484,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
           .eq('user_id', user.id);
       } catch (error) {
         console.error('Error clearing data:', error);
-        showToast('Failed to clear data on server.', 'error');
+        showToast('Failed to clear data on server. Local data not removed.', 'error');
+        return; // Don't wipe local data if server delete failed
       }
 
       await offlineDb.clearUserData(user.id);
@@ -513,6 +509,50 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     setTransactions([]);
   }, [user]);
 
+  const forceRefreshFromServer = useCallback(async () => {
+    if (!user) {
+      showToast('Must be logged in to refresh from server.', 'error');
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      // Clear local cache first — removes stale/duplicate data
+      await offlineDb.clearUserData(user.id);
+      setQueuedCount(0);
+      setTransactions([]);
+
+      // Fetch fresh data from Supabase
+      const remoteTransactions = await fetchRemoteTransactions(user.id);
+      const mergedWithStatus = await withQueueStatus(user.id, remoteTransactions);
+
+      setTransactions(mergedWithStatus);
+      await persistUserTransactions(user.id, mergedWithStatus);
+
+      // Also re-fetch budget goal
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('budget_limit')
+        .eq('user_id', user.id)
+        .single();
+
+      if (settings && Number(settings.budget_limit) > 0) {
+        const now = new Date();
+        const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        setBudgetGoalState({ monthlyLimit: Number(settings.budget_limit), month });
+      } else {
+        setBudgetGoalState(null);
+      }
+
+      showToast('Refreshed from server.', 'success');
+    } catch (error) {
+      console.error('Force refresh failed:', error);
+      showToast('Failed to refresh from server. Check your connection.', 'error');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [fetchRemoteTransactions, persistUserTransactions, showToast, user]);
+
   const value: BudgetContextValue = {
     transactions,
     addTransaction,
@@ -523,6 +563,7 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     clearAllData,
     retrySync,
     clearLocalCache,
+    forceRefreshFromServer,
     queuedCount,
     isSyncing,
     isOffline,
