@@ -27,6 +27,7 @@ const createMockBudgetContext = (
   clearAllData: vi.fn(),
   retrySync: vi.fn(async () => {}),
   clearLocalCache: vi.fn(async () => {}),
+  forceRefreshFromServer: vi.fn(async () => {}),
   queuedCount: 0,
   isSyncing: false,
   isOffline: false,
