@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useBudget } from '../contexts';
 import { CategoryManager } from '../components';
 
