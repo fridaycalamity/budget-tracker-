@@ -46,7 +46,9 @@ describe('mergeTransactions', () => {
     expect(merged.map((item) => item.id).sort()).toEqual(['local-only', 'remote-only']);
   });
 
-  it('deduplicates transactions with different IDs but same content', () => {
+  it('keeps both transactions with different IDs even if content matches', () => {
+    // Separate legitimate transactions can share the same description,
+    // amount, type, and date — they must not be collapsed.
     const local = [
       tx({
         id: 'local-uuid',
@@ -69,11 +71,10 @@ describe('mergeTransactions', () => {
     ];
 
     const merged = mergeTransactions(local, remote);
-    expect(merged).toHaveLength(1);
-    expect(merged[0].id).toBe('remote-uuid'); // newer wins
+    expect(merged).toHaveLength(2);
   });
 
-  it('deduplicates multiple same-content transactions across both arrays', () => {
+  it('keeps multiple same-content transactions across both arrays', () => {
     const local = [
       tx({ id: 'a1', description: 'Lunch', amount: 300, date: '2026-02-15', createdAt: '2026-02-15T12:00:00Z' }),
       tx({ id: 'a2', description: 'Lunch', amount: 300, date: '2026-02-15', createdAt: '2026-02-15T13:00:00Z' }),
@@ -83,7 +84,6 @@ describe('mergeTransactions', () => {
     ];
 
     const merged = mergeTransactions(local, remote);
-    expect(merged).toHaveLength(1);
-    expect(merged[0].id).toBe('a2'); // newest of the three
+    expect(merged).toHaveLength(3);
   });
 });
