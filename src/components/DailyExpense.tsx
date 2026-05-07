@@ -1,55 +1,66 @@
 import { useMemo } from 'react';
 import { useBudget } from '../contexts';
 import { formatCurrency, getLastNDaysExpenses } from '../utils';
+import type { Transaction } from '../types';
+import { mangaAssets } from '../lib/manga';
 
-export function DailyExpense() {
+interface DailyExpenseProps {
+  transactionsOverride?: Transaction[];
+}
+
+export function DailyExpense({ transactionsOverride }: DailyExpenseProps) {
   const { transactions } = useBudget();
+  const activeTransactions = transactionsOverride ?? transactions;
 
-  const dailyExpenses = useMemo(() => getLastNDaysExpenses(transactions, 7), [transactions]);
+  const dailyExpenses = useMemo(() => getLastNDaysExpenses(activeTransactions, 7), [activeTransactions]);
   const todaySpend = dailyExpenses[dailyExpenses.length - 1]?.amount ?? 0;
   const weekTotal = dailyExpenses.reduce((sum, day) => sum + day.amount, 0);
   const maxDailySpend = Math.max(...dailyExpenses.map((day) => day.amount), 0);
   const hasExpenses = weekTotal > 0;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 transition-colors duration-200">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-        Daily Expense
-      </h2>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-          <p className="text-xs font-medium text-red-800 dark:text-red-300 mb-1">Today&apos;s spend</p>
-          <p className="text-xl font-bold text-red-600 dark:text-red-400">{formatCurrency(todaySpend)}</p>
+    <div className="app-panel p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3 border-b border-[var(--app-border)] pb-3">
+        <div>
+          <p className="app-kicker mb-2">Seven-Day Spend</p>
+          <h2 className="app-section-title text-lg">Daily Expense</h2>
         </div>
-        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
-          <p className="text-xs font-medium text-orange-800 dark:text-orange-300 mb-1">This week</p>
-          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(weekTotal)}</p>
+        <div className="app-stamp">Last 7 Days</div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="app-panel-subtle p-4">
+          <p className="app-kicker mb-2">Today's Spend</p>
+          <p className="app-numeric text-2xl font-black">{formatCurrency(todaySpend)}</p>
+        </div>
+        <div className="app-panel-subtle p-4">
+          <p className="app-kicker mb-2">This Week</p>
+          <p className="app-numeric text-2xl font-black">{formatCurrency(weekTotal)}</p>
         </div>
       </div>
 
       {!hasExpenses ? (
-        <div className="py-4 text-center text-gray-500 dark:text-gray-400">No expenses yet</div>
-      ) : (
-        <div className="w-full">
-          <div className="h-28 flex items-end justify-between gap-2">
-            {dailyExpenses.map((day) => {
-              const height = maxDailySpend === 0 ? 0 : (day.amount / maxDailySpend) * 100;
-
-              return (
-                <div key={day.date} className="flex-1 flex flex-col items-center gap-2 min-w-0">
-                  <div className="w-full h-20 flex items-end">
-                    <div
-                      className="w-full rounded-t bg-red-500/80 dark:bg-red-400 transition-all duration-200"
-                      style={{ height: `${Math.max(height, day.amount > 0 ? 8 : 0)}%` }}
-                      aria-label={`${day.label} expense ${formatCurrency(day.amount)}`}
-                    />
-                  </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">{day.label}</span>
-                </div>
-              );
-            })}
+        <div className="mt-5 grid gap-4 border border-dashed border-[var(--app-border-strong)] p-5 sm:grid-cols-[1fr_120px] sm:items-center">
+          <div>
+            <div className="font-[var(--font-display)] text-xl uppercase leading-none">No Expenses Yet</div>
+            <p className="mt-2 text-sm leading-6 text-[var(--app-text-muted)]">Daily expense bars will appear once the ledger records spend.</p>
           </div>
+          <img src={mangaAssets.emptyStateLoneSamurai} alt="Lone samurai empty state" className="mx-auto max-h-28 w-auto object-contain opacity-80 mix-blend-multiply sm:max-h-32" />
+        </div>
+      ) : (
+        <div className="mt-5 space-y-2">
+          {dailyExpenses.map((day) => {
+            const width = maxDailySpend === 0 ? 0 : (day.amount / maxDailySpend) * 100;
+            return (
+              <div key={day.date} className="grid grid-cols-[38px_1fr_76px] items-center gap-3" aria-label={`${day.label} expense ${formatCurrency(day.amount)}`}>
+                <span className="text-[11px] font-black uppercase tracking-[0.1em]">{day.label}</span>
+                <div className="h-4 bg-[linear-gradient(90deg,rgba(0,0,0,0.05),transparent)]">
+                  <div className="h-full bg-[var(--color-black)]" style={{ width: `${Math.max(width, day.amount > 0 ? 8 : 0)}%` }} />
+                </div>
+                <span className="app-numeric text-right text-[11px] font-black text-[var(--app-text-muted)]">{formatCurrency(day.amount)}</span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

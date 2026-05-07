@@ -1,26 +1,25 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { subMonths, format } from 'date-fns';
 import { useBudget } from '../contexts/BudgetContext';
 import { useToast } from '../contexts/ToastContext';
 import { BudgetProgress } from '../components';
-import { getCurrentMonth } from '../utils';
+import { formatCurrency } from '../utils';
+import { InkStrokeBar } from '../components/InkStrokeBar';
 
-/**
- * BudgetGoals page (optional feature)
- * Allows users to set monthly spending limits and view progress
- */
 export function BudgetGoals() {
-  const { budgetGoal, setBudgetGoal } = useBudget();
+  const { budgetGoal, setBudgetGoal, getMonthlySummary } = useBudget();
   const { showToast } = useToast();
 
-  const [monthlyLimit, setMonthlyLimit] = useState<string>(
-    budgetGoal?.monthlyLimit.toString() || ''
-  );
+  const [monthlyLimit, setMonthlyLimit] = useState<string>(budgetGoal?.monthlyLimit.toString() || '');
+  const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const recentMonths = useMemo(() => Array.from({ length: 6 }, (_, i) => format(subMonths(new Date(), i), 'yyyy-MM')).reverse(), []);
+  const selectedSummary = useMemo(() => getMonthlySummary(selectedMonth), [getMonthlySummary, selectedMonth]);
+  const monthRows = useMemo(() => recentMonths.map((month) => ({ month, summary: getMonthlySummary(month) })), [recentMonths, getMonthlySummary]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate
     const newErrors: Record<string, string> = {};
     const limitValue = parseFloat(monthlyLimit);
 
@@ -35,14 +34,9 @@ export function BudgetGoals() {
       return;
     }
 
-    // Save budget goal
-    setBudgetGoal({
-      monthlyLimit: limitValue,
-      month: getCurrentMonth(),
-    });
-
+    setBudgetGoal({ monthlyLimit: limitValue, month: selectedMonth });
     setErrors({});
-    showToast('Budget goal saved successfully!', 'success');
+    showToast('Monthly budget limit saved successfully!', 'success');
   };
 
   const handleClearGoal = () => {
@@ -52,78 +46,75 @@ export function BudgetGoals() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Budget Goals
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Set and track your monthly spending limits
-        </p>
-      </div>
+    <div className="space-y-4 lg:space-y-5">
+      <section>
+        <p className="app-kicker mb-2">Monthly Limit</p>
+        <h1 className="app-page-title">Budget Goals</h1>
+        <p className="mt-2 max-w-2xl text-sm text-[var(--app-text-muted)] sm:text-base">Set a monthly ceiling, inspect the current month, and compare recent pressure across the ledger.</p>
+      </section>
 
-      {/* Budget Goal Form */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Set Monthly Budget
-        </h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="app-panel p-5 sm:p-6">
+        <h2 className="app-section-title text-lg">Monthly Budget Limit</h2>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label
-              htmlFor="monthlyLimit"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Monthly Spending Limit (₱)
-            </label>
-            <input
-              type="number"
-              id="monthlyLimit"
-              value={monthlyLimit}
-              onChange={(e) => setMonthlyLimit(e.target.value)}
-              step="0.01"
-              min="0"
-              placeholder="Enter your monthly budget limit"
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
-                errors.monthlyLimit
-                  ? 'border-red-500 dark:border-red-500'
-                  : 'border-gray-300'
-              }`}
-              aria-invalid={!!errors.monthlyLimit}
-              aria-describedby={errors.monthlyLimit ? 'monthlyLimit-error' : undefined}
-            />
-            {errors.monthlyLimit && (
-              <p
-                id="monthlyLimit-error"
-                className="mt-1 text-sm text-red-600 dark:text-red-400"
-                role="alert"
-              >
-                {errors.monthlyLimit}
-              </p>
-            )}
+            <label htmlFor="monthlyLimit" className="mb-1 block text-[11px] font-black uppercase tracking-[0.14em] text-[var(--app-text-muted)]">Budget Limit (₱)</label>
+            <input type="number" id="monthlyLimit" value={monthlyLimit} onChange={(e) => setMonthlyLimit(e.target.value)} step="0.01" min="0" placeholder="Enter your monthly budget limit" className={`app-input w-full px-4 py-3 ${errors.monthlyLimit ? 'border-[var(--app-border-strong)]' : ''}`} />
+            {errors.monthlyLimit && <p className="mt-1 text-sm text-[var(--app-text)]">{errors.monthlyLimit}</p>}
           </div>
 
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-            >
-              Save Budget Goal
-            </button>
-            {budgetGoal && (
-              <button
-                type="button"
-                onClick={handleClearGoal}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-              >
-                Clear Goal
-              </button>
-            )}
+          <div className="flex flex-wrap gap-3">
+            <button type="submit" className="app-button-primary px-5 text-white">Save Budget Limit</button>
+            {budgetGoal && <button type="button" onClick={handleClearGoal} className="app-button-secondary px-5">Clear Goal</button>}
           </div>
         </form>
       </div>
 
-      {/* Budget Progress */}
-      <BudgetProgress />
+      {budgetGoal && (
+        <>
+          <BudgetProgress summaryOverride={selectedSummary} title="Budget Progress" />
+
+          <div className="app-panel p-5 sm:p-6">
+            <div className="flex flex-col gap-3 border-b border-[var(--app-border)] pb-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="app-section-title text-lg">Current Month</h2>
+                <p className="mt-1 text-sm text-[var(--app-text-muted)]">Inspect a specific month in detail.</p>
+              </div>
+              <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="app-input px-3 py-3" />
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="app-panel-subtle p-4"><div className="app-kicker mb-2">Income</div><div className="app-numeric text-2xl font-black">{formatCurrency(selectedSummary.totalIncome)}</div></div>
+              <div className="app-panel-subtle p-4"><div className="app-kicker mb-2">Expenses</div><div className="app-numeric text-2xl font-black">{formatCurrency(selectedSummary.totalExpenses)}</div></div>
+              <div className="app-panel-subtle p-4"><div className="app-kicker mb-2">Balance</div><div className="app-numeric text-2xl font-black">{formatCurrency(selectedSummary.balance)}</div></div>
+            </div>
+          </div>
+
+          <div className="app-panel p-5 sm:p-6">
+            <h2 className="app-section-title text-lg">Recent Month Progress</h2>
+            <div className="mt-4 space-y-3">
+              {monthRows.map(({ month, summary }) => {
+                const limit = budgetGoal.monthlyLimit;
+                const pctRaw = limit > 0 ? (summary.totalExpenses / limit) * 100 : 0;
+                const pct = Math.min(pctRaw, 100);
+                const over = summary.totalExpenses > limit;
+                const label = over ? 'Over Budget' : pctRaw >= 70 ? 'Nearing Limit' : 'On Track';
+                return (
+                  <div key={month} className="app-panel-subtle p-4">
+                    <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                      <div>
+                        <div className="font-black uppercase tracking-[0.08em]">{format(new Date(`${month}-01`), 'MMMM yyyy')}</div>
+                        <div className="mt-1 text-sm text-[var(--app-text-muted)]">Spent {formatCurrency(summary.totalExpenses)} / {formatCurrency(limit)}</div>
+                      </div>
+                      <div className="text-right"><div className="app-stamp">{label}</div><div className="app-numeric mt-2 text-lg font-black">{pctRaw.toFixed(1)}%</div></div>
+                    </div>
+                    <div className="mt-3 h-4"><InkStrokeBar percent={pct} minPercent={2} /></div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

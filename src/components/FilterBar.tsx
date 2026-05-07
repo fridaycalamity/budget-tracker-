@@ -2,19 +2,6 @@ import { type ChangeEvent } from 'react';
 import type { TransactionFilters } from '../types';
 import { useCategories } from '../contexts';
 
-/**
- * FilterBar component
- * Provides filtering controls for transaction list
- * 
- * Features:
- * - Type filter dropdown (all/income/expense)
- * - Category filter dropdown (dynamic categories + "all")
- * - Date range inputs (start and end date)
- * - Connected to filter state via props
- * 
- * Requirements: 5.1, 5.2, 5.3
- */
-
 interface FilterBarProps {
   filters: TransactionFilters;
   onFiltersChange: (filters: TransactionFilters) => void;
@@ -23,174 +10,72 @@ interface FilterBarProps {
 export function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
   const { categories } = useCategories();
 
-  /**
-   * Handle type filter change
-   */
   const handleTypeChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const newType = e.target.value as 'all' | 'income' | 'expense';
-    onFiltersChange({
-      ...filters,
-      type: newType,
-    });
+    onFiltersChange({ ...filters, type: newType });
   };
 
-  /**
-   * Handle category filter change
-   */
   const handleCategoryChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const newCategory = e.target.value;
-    onFiltersChange({
-      ...filters,
-      category: newCategory,
-    });
+    onFiltersChange({ ...filters, category: e.target.value });
   };
 
-  /**
-   * Handle start date change
-   */
   const handleStartDateChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const newStartDate = e.target.value || null;
-    onFiltersChange({
-      ...filters,
-      dateRange: {
-        ...filters.dateRange,
-        start: newStartDate,
-      },
-    });
+    onFiltersChange({ ...filters, dateRange: { ...filters.dateRange, start: e.target.value || null } });
   };
 
-  /**
-   * Handle end date change
-   */
   const handleEndDateChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const newEndDate = e.target.value || null;
-    onFiltersChange({
-      ...filters,
-      dateRange: {
-        ...filters.dateRange,
-        end: newEndDate,
-      },
-    });
+    onFiltersChange({ ...filters, dateRange: { ...filters.dateRange, end: e.target.value || null } });
   };
 
-  /**
-   * Clear all filters
-   */
   const handleClearFilters = () => {
-    onFiltersChange({
-      type: 'all',
-      category: 'all',
-      dateRange: {
-        start: null,
-        end: null,
-      },
-    });
+    onFiltersChange({ type: 'all', category: 'all', dateRange: { start: null, end: null } });
   };
 
-  // Check if any filters are active
-  const hasActiveFilters =
-    filters.type !== 'all' ||
-    filters.category !== 'all' ||
-    filters.dateRange.start !== null ||
-    filters.dateRange.end !== null;
+  const hasActiveFilters = filters.type !== 'all' || filters.category !== 'all' || filters.dateRange.start !== null || filters.dateRange.end !== null;
+
+  const inputClass = 'app-input w-full px-3 py-3';
+  const labelClass = 'mb-1 block text-[11px] font-black uppercase tracking-[0.14em] text-[var(--app-text-muted)]';
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Filters
-        </h3>
+    <div className="app-panel p-4 sm:p-5">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="app-section-title text-lg">Filters</h3>
+          <p className="mt-1 text-sm text-[var(--app-text-muted)]">Refine the ledger by type, category, and date.</p>
+        </div>
         {hasActiveFilters && (
-          <button
-            onClick={handleClearFilters}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-            aria-label="Clear all filters"
-          >
+          <button onClick={handleClearFilters} className="app-brush-link text-sm" aria-label="Clear all filters">
             Clear All
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Type Filter */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div>
-          <label
-            htmlFor="type-filter"
-            className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
-          >
-            Type
-          </label>
-          <select
-            id="type-filter"
-            value={filters.type}
-            onChange={handleTypeChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            aria-label="Filter by transaction type"
-          >
+          <label htmlFor="type-filter" className={labelClass}>Type</label>
+          <select id="type-filter" value={filters.type} onChange={handleTypeChange} className={inputClass} aria-label="Filter by transaction type">
             <option value="all">All Types</option>
             <option value="income">Income</option>
             <option value="expense">Expense</option>
           </select>
         </div>
 
-        {/* Category Filter */}
         <div>
-          <label
-            htmlFor="category-filter"
-            className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
-          >
-            Category
-          </label>
-          <select
-            id="category-filter"
-            value={filters.category}
-            onChange={handleCategoryChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            aria-label="Filter by category"
-          >
+          <label htmlFor="category-filter" className={labelClass}>Category</label>
+          <select id="category-filter" value={filters.category} onChange={handleCategoryChange} className={inputClass} aria-label="Filter by category">
             <option value="all">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.icon} {cat.name}
-              </option>
-            ))}
+            {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
           </select>
         </div>
 
-        {/* Start Date Filter */}
         <div>
-          <label
-            htmlFor="start-date-filter"
-            className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
-          >
-            Start Date
-          </label>
-          <input
-            type="date"
-            id="start-date-filter"
-            value={filters.dateRange.start || ''}
-            onChange={handleStartDateChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            aria-label="Filter by start date"
-          />
+          <label htmlFor="start-date-filter" className={labelClass}>Start Date</label>
+          <input type="date" id="start-date-filter" value={filters.dateRange.start || ''} onChange={handleStartDateChange} className={inputClass} aria-label="Filter by start date" />
         </div>
 
-        {/* End Date Filter */}
         <div>
-          <label
-            htmlFor="end-date-filter"
-            className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
-          >
-            End Date
-          </label>
-          <input
-            type="date"
-            id="end-date-filter"
-            value={filters.dateRange.end || ''}
-            onChange={handleEndDateChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            aria-label="Filter by end date"
-          />
+          <label htmlFor="end-date-filter" className={labelClass}>End Date</label>
+          <input type="date" id="end-date-filter" value={filters.dateRange.end || ''} onChange={handleEndDateChange} className={inputClass} aria-label="Filter by end date" />
         </div>
       </div>
     </div>

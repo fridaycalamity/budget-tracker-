@@ -6,10 +6,10 @@ export function OfflineBanner() {
   if (!isOffline && queuedCount === 0 && !isSyncing) return null;
 
   return (
-    <div className="bg-amber-500 dark:bg-amber-600 text-white text-center py-2 px-4 text-sm font-medium">
-      {isOffline ? "You're offline — using cached data" : 'Back online'}
-      {queuedCount > 0 ? ` • ${queuedCount} change${queuedCount === 1 ? '' : 's'} queued` : ''}
-      {isSyncing ? ' • Syncing changes...' : ''}
+    <div className="app-panel-dark px-4 py-2 text-center text-xs font-black uppercase tracking-[0.16em]">
+      {isOffline ? 'Offline Mode — Changes Will Sync Later' : 'Back Online'}
+      {queuedCount > 0 ? ` · ${queuedCount} queued` : ''}
+      {isSyncing ? ' · Syncing' : ''}
     </div>
   );
 }

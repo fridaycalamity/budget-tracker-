@@ -174,35 +174,39 @@ export function isInDateRange(
  * // }
  */
 export function calculateSummary(transactions: Transaction[]): FinancialSummary {
-  // Initialize totals
   let totalIncome = 0;
   let totalExpenses = 0;
-  
-  // Initialize expenses by category (dynamic based on transactions)
   const expensesByCategory: Record<string, number> = {};
-  
-  // Process each transaction
+  const balanceBySource: Record<string, number> = {};
+
   for (const transaction of transactions) {
+    const sourceId = transaction.balanceSourceId;
+
     if (transaction.type === 'income') {
       totalIncome += transaction.amount;
+      if (sourceId) {
+        balanceBySource[sourceId] = (balanceBySource[sourceId] || 0) + transaction.amount;
+      }
     } else if (transaction.type === 'expense') {
       totalExpenses += transaction.amount;
-      // Add to category total (initialize if not exists)
       if (!expensesByCategory[transaction.category]) {
         expensesByCategory[transaction.category] = 0;
       }
       expensesByCategory[transaction.category] += transaction.amount;
+      if (sourceId) {
+        balanceBySource[sourceId] = (balanceBySource[sourceId] || 0) - transaction.amount;
+      }
     }
   }
-  
-  // Calculate balance (income minus expenses)
+
   const balance = totalIncome - totalExpenses;
-  
+
   return {
     totalIncome,
     totalExpenses,
     balance,
     expensesByCategory,
+    balanceBySource,
   };
 }
 
@@ -384,14 +388,12 @@ export function validateTransaction(data: Partial<Transaction>): { isValid: bool
   }
   
   // Validate category
-  // Note: Category validation will be done against actual category IDs
-  // in the CategoryContext when creating transactions
   if (!data.category) {
     errors.category = 'Category is required';
   } else if (typeof data.category !== 'string' || data.category.trim().length === 0) {
     errors.category = 'Invalid category';
   }
-  
+
   // Validate date
   if (!data.date) {
     errors.date = 'Date is required';
@@ -443,10 +445,9 @@ export function validateTransaction(data: Partial<Transaction>): { isValid: bool
  * validateBudgetGoal({ monthlyLimit: 10000, month: '2024-01' })
  * // { isValid: true, errors: {} }
  */
-export function validateBudgetGoal(goal: Partial<{ monthlyLimit: number; month: string }>): { isValid: boolean; errors: Record<string, string> } {
+export function validateBudgetGoal(goal: Partial<{ monthlyLimit: number; month?: string }>): { isValid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
-  
-  // Validate monthlyLimit
+
   if (goal.monthlyLimit === undefined || goal.monthlyLimit === null) {
     errors.monthlyLimit = 'Monthly limit is required';
   } else if (typeof goal.monthlyLimit !== 'number' || isNaN(goal.monthlyLimit)) {
@@ -454,18 +455,16 @@ export function validateBudgetGoal(goal: Partial<{ monthlyLimit: number; month: 
   } else if (goal.monthlyLimit <= 0) {
     errors.monthlyLimit = 'Monthly limit must be positive';
   }
-  
-  // Validate month format (YYYY-MM)
+
   if (!goal.month) {
     errors.month = 'Month is required';
   } else {
-    // Check format using regex
     const monthRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
     if (!monthRegex.test(goal.month)) {
       errors.month = 'Invalid month format. Use YYYY-MM';
     }
   }
-  
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors,

@@ -1,80 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TransactionModal } from './TransactionModal';
-
-/**
- * AddTransactionButton component
- * Floating Action Button (FAB) for adding new transactions
- * 
- * Features:
- * - Fixed position at bottom-right corner
- * - Opens TransactionModal on click
- * - Smooth hover and click animations
- * - Keyboard accessible (Enter/Space to activate)
- * - ARIA labels for screen readers
- * - Responsive positioning
- * 
- * Requirements: 12.1, 12.2, 7.4, 7.5
- */
 
 export function AddTransactionButton() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  /**
-   * Handle button click
-   * Opens the transaction modal
-   */
-  const handleClick = () => {
-    setIsModalOpen(true);
-  };
+  useEffect(() => {
+    const open = () => setIsModalOpen(true);
+    window.addEventListener('open-add-transaction', open as EventListener);
+    return () => window.removeEventListener('open-add-transaction', open as EventListener);
+  }, []);
 
-  /**
-   * Handle keyboard interaction
-   * Opens modal on Enter or Space key
-   */
+  const handleClick = () => setIsModalOpen(true);
+  const handleCloseModal = () => setIsModalOpen(false);
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      handleClick();
+      setIsModalOpen(true);
     }
-  };
-
-  /**
-   * Handle modal close
-   * Closes the transaction modal
-   */
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
   };
 
   return (
     <>
-      {/* Floating Action Button */}
       <button
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 w-14 h-14 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 ease-in-out transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 flex items-center justify-center group"
+        className="fixed bottom-[74px] left-1/2 z-40 flex h-[60px] w-[60px] -translate-x-1/2 items-center justify-center rounded-full border-[3px] border-[var(--color-black)] bg-[var(--color-paper)] text-[var(--color-black)] shadow-none transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-[var(--app-border-strong)] sm:bottom-6 sm:left-auto sm:right-6 sm:translate-x-0 lg:bottom-8 lg:right-8"
         aria-label="Add new transaction"
-        title="Add new transaction"
+        title="Add transaction"
         type="button"
       >
-        {/* Plus Icon */}
-        <svg
-          className="w-6 h-6 transition-transform duration-200 group-hover:rotate-90"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 4v16m8-8H4"
-          />
+        <span className="pointer-events-none absolute inset-[6px] rounded-full border border-[var(--app-border)]" aria-hidden="true" />
+        <svg className="relative h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 5v14m7-7H5" />
         </svg>
       </button>
 
-      {/* Transaction Modal */}
       <TransactionModal isOpen={isModalOpen} onClose={handleCloseModal} />
     </>
   );

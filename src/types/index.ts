@@ -49,6 +49,7 @@ export interface Transaction {
   amount: number; // Positive number, max 2 decimal places
   type: 'income' | 'expense';
   category: string; // Category ID (migrated from TransactionCategory)
+  balanceSourceId?: string; // Balance source ID (nullable for backward compat with existing rows)
   date: string; // ISO 8601 date string (YYYY-MM-DD)
   createdAt: string; // ISO 8601 timestamp
   updatedAt?: string; // ISO 8601 timestamp
@@ -78,8 +79,8 @@ export type TransactionCategory =
  * Represents a monthly spending limit
  */
 export interface BudgetGoal {
-  monthlyLimit: number; // Positive number
-  month: string; // Format: YYYY-MM
+  monthlyLimit: number; // Positive number applied to every month
+  month?: string; // legacy compatibility, ignored by current implementation
 }
 
 /**
@@ -111,8 +112,55 @@ export interface SortConfig {
 export interface FinancialSummary {
   totalIncome: number;
   totalExpenses: number;
-  balance: number;
+  balance: number; // all-time: overall balance, monthly: end balance for the selected month
+  startBalance?: number; // monthly only: carried balance at the start of the period
   expensesByCategory: Record<string, number>; // Category ID -> amount
+  balanceBySource?: Record<string, number>; // source end balance for the selected period view
+  startBalanceBySource?: Record<string, number>; // monthly only: carried source balances at period start
+}
+
+/**
+ * Balance source definition
+ * Represents a named account/wallet (e.g., GoTyme, BPI, Gcash, Cash)
+ */
+export interface BalanceSource {
+  id: string; // UUID v4
+  name: string; // User-defined name, 1-50 characters
+  userId: string; // Auth user ID
+  createdAt: string; // ISO 8601 timestamp
+}
+
+/**
+ * Subscription definition
+ * Represents a recurring monthly expense template
+ */
+export interface Subscription {
+  id: string; // UUID v4
+  name: string; // 1-100 characters
+  amount: number; // Fixed monthly amount
+  billingDay: number; // Day of month (1-31)
+  categoryId: string; // Category ID for the generated expense
+  balanceSourceId?: string; // Optional: which source to charge from
+  isEnabled: boolean; // Whether the subscription is active
+  userId: string; // Auth user ID
+  createdAt: string; // ISO 8601 timestamp
+}
+
+export interface CreateSubscriptionInput extends Omit<Subscription, 'id' | 'userId' | 'createdAt'> {
+  startMode?: 'current' | 'next';
+}
+
+/**
+ * Subscription payment tracking
+ * Records which months have been generated for each subscription
+ */
+export interface SubscriptionPayment {
+  id: string; // UUID v4
+  subscriptionId: string; // FK to subscription
+  transactionId: string | null; // FK to generated transaction (null if deleted)
+  billingMonth: string; // Format: YYYY-MM
+  userId: string; // Auth user ID
+  createdAt: string; // ISO 8601 timestamp
 }
 
 // Context API Interfaces
@@ -126,8 +174,20 @@ export interface BudgetContextValue {
   addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => void;
   updateTransaction: (id: string, transaction: Omit<Transaction, 'id' | 'createdAt'>) => void;
   deleteTransaction: (id: string) => void;
+  balanceSources: BalanceSource[];
+  addBalanceSource: (name: string) => Promise<void>;
+  updateBalanceSource: (id: string, name: string) => Promise<void>;
+  deleteBalanceSource: (id: string) => Promise<void>;
+  assignTransactionsToSource: (transactionIds: string[], sourceId: string) => Promise<void>;
+  subscriptions: Subscription[];
+  addSubscription: (sub: CreateSubscriptionInput) => Promise<void>;
+  updateSubscription: (id: string, updates: Partial<Subscription>) => Promise<void>;
+  deleteSubscription: (id: string) => Promise<void>;
+  toggleSubscription: (id: string) => Promise<void>;
+  subscriptionPayments: SubscriptionPayment[];
   budgetGoal: BudgetGoal | null;
   setBudgetGoal: (goal: BudgetGoal | null) => void;
+  getMonthlySummary: (month: string) => FinancialSummary;
   clearAllData: () => void;
   retrySync: () => Promise<void>;
   clearLocalCache: () => Promise<void>;

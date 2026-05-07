@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useBudget } from '../contexts';
 import { FilterBar } from '../components/FilterBar';
 import { SortControls } from '../components/SortControls';
@@ -6,221 +6,226 @@ import { TransactionRow } from '../components/TransactionRow';
 import { TransactionModal } from '../components/TransactionModal';
 import { filterTransactions, sortTransactions } from '../utils';
 import type { TransactionFilters, SortConfig, Transaction } from '../types';
+import { mangaAssets } from '../lib/manga';
 
-/**
- * TransactionList page
- * Displays all transactions with filtering and sorting capabilities
- * 
- * Features:
- * - FilterBar for filtering by type, category, and date range
- * - SortControls for sorting by date or amount
- * - TransactionRow for each transaction with edit and delete
- * - TransactionModal for editing transactions
- * - Empty state when no transactions exist
- * - No results state when filters return no matches
- * - Fully responsive design
- * 
- * Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7
- */
+const TRANSACTION_WINDOWS = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'all', label: 'All Records' },
+] as const;
+
+const TRANSACTION_WINDOW_SUMMARY_LABELS = {
+  daily: 'daily',
+  weekly: 'weekly',
+  monthly: 'monthly',
+  all: 'transaction',
+} as const;
+
+type TransactionWindow = (typeof TRANSACTION_WINDOWS)[number]['value'];
+
+type PageSize = 25 | 50;
+
 export function TransactionList() {
   const { transactions, deleteTransaction } = useBudget();
-
-  // Edit modal state
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  // Filter state
   const [filters, setFilters] = useState<TransactionFilters>({
     type: 'all',
     category: 'all',
-    dateRange: {
-      start: null,
-      end: null,
-    },
+    dateRange: { start: null, end: null },
   });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'date', direction: 'desc' });
+  const [transactionWindow, setTransactionWindow] = useState<TransactionWindow>('monthly');
+  const [pageSize, setPageSize] = useState<PageSize>(50);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Sort state - default to newest first
-  const [sortConfig, setSortConfig] = useState<SortConfig>({
-    field: 'date',
-    direction: 'desc',
-  });
-
-  // Handle edit transaction
   const handleEdit = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setIsEditModalOpen(true);
   };
 
-  // Handle close edit modal
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setEditingTransaction(null);
   };
 
-  // Apply filters and sorting using memoization for performance
-  const displayedTransactions = useMemo(() => {
-    // First filter the transactions
-    const filtered = filterTransactions(transactions, filters);
-    
-    // Then sort the filtered results
-    const sorted = sortTransactions(filtered, sortConfig);
-    
-    return sorted;
-  }, [transactions, filters, sortConfig]);
+  const windowedTransactions = useMemo(() => {
+    if (transactionWindow === 'all') return transactions;
 
-  // Check if any filters are active
+    const today = new Date();
+    const todayKey = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString().slice(0, 10);
+
+    if (transactionWindow === 'daily') {
+      return transactions.filter((transaction) => transaction.date === todayKey);
+    }
+
+    if (transactionWindow === 'monthly') {
+      const monthKey = todayKey.slice(0, 7);
+      return transactions.filter((transaction) => transaction.date.startsWith(monthKey));
+    }
+
+    const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    weekStart.setDate(weekStart.getDate() - 6);
+    const weekStartKey = weekStart.toISOString().slice(0, 10);
+
+    return transactions.filter((transaction) => transaction.date >= weekStartKey && transaction.date <= todayKey);
+  }, [transactions, transactionWindow]);
+
+  const displayedTransactions = useMemo(() => {
+    const filtered = filterTransactions(windowedTransactions, filters);
+    return sortTransactions(filtered, sortConfig);
+  }, [windowedTransactions, filters, sortConfig]);
+
+  const totalPages = Math.max(1, Math.ceil(displayedTransactions.length / pageSize));
+  const paginatedTransactions = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return displayedTransactions.slice(startIndex, startIndex + pageSize);
+  }, [displayedTransactions, currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, sortConfig, transactionWindow, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const hasActiveFilters =
     filters.type !== 'all' ||
     filters.category !== 'all' ||
     filters.dateRange.start !== null ||
     filters.dateRange.end !== null;
 
-  // Empty state - no transactions at all
-  if (transactions.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Transactions
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            View and manage all your transactions
-          </p>
-        </div>
-
-        <div 
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 sm:p-12 text-center"
-          role="status"
-          aria-live="polite"
-        >
-          <svg
-            className="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600 mb-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            No transactions yet
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Get started by adding your first transaction using the + button below.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // No results state - filters returned no matches
-  if (displayedTransactions.length === 0 && hasActiveFilters) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Transactions
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            View and manage all your transactions
-          </p>
-        </div>
-
-        <FilterBar filters={filters} onFiltersChange={setFilters} />
-        <SortControls sortConfig={sortConfig} onSortChange={setSortConfig} />
-
-        <div 
-          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 sm:p-12 text-center"
-          role="status"
-          aria-live="polite"
-        >
-          <svg
-            className="mx-auto h-16 w-16 text-gray-400 dark:text-gray-600 mb-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            No transactions found
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Try adjusting your filters to see more results.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Main view with transactions
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Transactions
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          View and manage all your transactions
+    <div className="space-y-4 lg:space-y-5">
+      <section>
+        <p className="app-kicker mb-2">Ledger Entries</p>
+        <h1 className="app-page-title">Transactions</h1>
+        <p className="mt-2 max-w-2xl text-sm text-[var(--app-text-muted)] sm:text-base">
+          Review every recorded entry, refine the ledger with filters, and edit details without leaving the page.
         </p>
-      </div>
+      </section>
 
-      {/* Filter Bar */}
-      <div role="region" aria-label="Transaction filters">
-        <FilterBar filters={filters} onFiltersChange={setFilters} />
-      </div>
-
-      {/* Sort Controls */}
-      <div role="region" aria-label="Sort controls">
-        <SortControls sortConfig={sortConfig} onSortChange={setSortConfig} />
-      </div>
-
-      {/* Results count */}
-      <div 
-        className="text-sm text-gray-600 dark:text-gray-400"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        Showing {displayedTransactions.length} of {transactions.length} transaction
-        {transactions.length !== 1 ? 's' : ''}
-      </div>
-
-      {/* Transaction List */}
-      <div 
-        className="space-y-3"
-        role="list"
-        aria-label="Transaction list"
-      >
-        {displayedTransactions.map((transaction) => (
-          <div key={transaction.id} role="listitem">
-            <TransactionRow
-              transaction={transaction}
-              onDelete={deleteTransaction}
-              onEdit={handleEdit}
-            />
+      {transactions.length === 0 ? (
+        <div className="app-panel overflow-hidden p-6 sm:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1fr_220px] lg:items-center">
+            <div>
+              <div className="font-[var(--font-display)] text-3xl uppercase leading-none">No Transactions Yet</div>
+              <p className="mt-3 text-sm leading-6 text-[var(--app-text-muted)]">Every journey begins with the first entry. Add your first income or expense using the floating plus button.</p>
+            </div>
+            <img src={mangaAssets.emptyStateLoneSamurai} alt="Lone samurai empty state" className="mx-auto max-h-40 w-auto object-contain opacity-80 mix-blend-multiply sm:max-h-52" />
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <>
+          <div className="app-panel p-4 sm:p-5">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h3 className="app-section-title text-lg">Record Window</h3>
+                <p className="mt-1 text-sm text-[var(--app-text-muted)]">Start with the current month by default, or switch to daily, weekly, or the full ledger.</p>
+              </div>
+              <div className="text-xs font-black uppercase tracking-[0.12em] text-[var(--app-text-muted)]">
+                Default view: Monthly
+              </div>
+            </div>
 
-      {/* Edit Transaction Modal */}
-      <TransactionModal
-        isOpen={isEditModalOpen}
-        onClose={handleCloseEditModal}
-        editTransaction={editingTransaction}
-      />
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="tablist" aria-label="Transaction record window">
+              {TRANSACTION_WINDOWS.map((option) => {
+                const isActive = transactionWindow === option.value;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setTransactionWindow(option.value)}
+                    className={`min-h-11 border px-4 py-3 text-sm font-black uppercase tracking-[0.1em] transition ${isActive ? 'border-[var(--color-black)] bg-[var(--color-black)] text-white' : 'border-[var(--app-border-strong)] bg-[var(--color-white)] text-[var(--app-text)] hover:bg-[var(--color-paper)]'}`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <FilterBar filters={filters} onFiltersChange={setFilters} />
+          <SortControls sortConfig={sortConfig} onSortChange={setSortConfig} />
+
+          <div className="app-panel p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm text-[var(--app-text-muted)]" role="status" aria-live="polite" aria-atomic="true">
+                Showing <span className="font-black text-[var(--app-text)]">{paginatedTransactions.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}</span>–<span className="font-black text-[var(--app-text)]">{Math.min(currentPage * pageSize, displayedTransactions.length)}</span> of <span className="font-black text-[var(--app-text)]">{displayedTransactions.length}</span> visible {TRANSACTION_WINDOW_SUMMARY_LABELS[transactionWindow]} record{displayedTransactions.length !== 1 ? 's' : ''}
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <label className="flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[var(--app-text-muted)]">
+                  <span>Per Page</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value) as PageSize)}
+                    className="app-input min-h-11 w-[110px] px-3 py-2 text-sm text-[var(--app-text)]"
+                    aria-label="Transactions per page"
+                  >
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </label>
+                {hasActiveFilters && displayedTransactions.length === 0 && <div className="app-stamp">No Matches</div>}
+              </div>
+            </div>
+          </div>
+
+          {displayedTransactions.length === 0 ? (
+            <div className="app-panel p-6 sm:p-8 text-center">
+              <div className="font-[var(--font-display)] text-3xl uppercase leading-none">No Transactions Found</div>
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[var(--app-text-muted)]">The current filters produced an empty panel. Adjust the date window, type, or category to reveal more entries.</p>
+            </div>
+          ) : (
+            <>
+              <div className="app-panel px-4 sm:px-5" role="list" aria-label="Transaction list">
+                {paginatedTransactions.map((transaction) => (
+                  <div key={transaction.id} role="listitem">
+                    <TransactionRow transaction={transaction} onDelete={deleteTransaction} onEdit={handleEdit} />
+                  </div>
+                ))}
+              </div>
+
+              {displayedTransactions.length > pageSize && (
+                <div className="app-panel p-4 sm:p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-sm text-[var(--app-text-muted)]">
+                      Page <span className="font-black text-[var(--app-text)]">{currentPage}</span> of <span className="font-black text-[var(--app-text)]">{totalPages}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                        disabled={currentPage === 1}
+                        className="app-button-secondary min-h-11 px-4 disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                        disabled={currentPage === totalPages}
+                        className="app-button-primary min-h-11 px-4 text-white disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      <TransactionModal isOpen={isEditModalOpen} onClose={handleCloseEditModal} editTransaction={editingTransaction} />
     </div>
   );
 }

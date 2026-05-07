@@ -1,17 +1,6 @@
 import { useBudget } from '../contexts';
-import { CategoryManager } from '../components';
+import { CategoryManager, BalanceSourceManager } from '../components';
 
-/**
- * Settings page
- * Provides sync and data management options
- * 
- * Features:
- * - Retry sync for offline queue
- * - Refresh from server
- * - Clear local cache
- * 
- * Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6
- */
 export function Settings() {
   const { retrySync, clearLocalCache, forceRefreshFromServer, queuedCount, isSyncing } = useBudget();
 
@@ -36,55 +25,37 @@ export function Settings() {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-        Settings
-      </h2>
-      <p className="text-gray-600 dark:text-gray-400">
-        Manage your application settings and data
-      </p>
+    <div className="space-y-4 lg:space-y-5">
+      <section>
+        <p className="app-kicker mb-2">System</p>
+        <h1 className="app-page-title">Settings</h1>
+        <p className="mt-2 max-w-2xl text-sm text-[var(--app-text-muted)] sm:text-base">Manage source accounts, categories, and sync controls for the ledger.</p>
+      </section>
 
-      {/* Category Management Section */}
       <CategoryManager />
+      <BalanceSourceManager />
 
-      {/* Sync & Data Management Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Sync & Data
-        </h3>
-        <div className="space-y-3">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Offline sync queue: {queuedCount} pending change{queuedCount === 1 ? '' : 's'}
+      <div className="app-panel p-5 sm:p-6">
+        <div className="app-kicker mb-2">Offline Control</div>
+        <h3 className="app-section-title text-lg">Sync & Data</h3>
+        <div className="mt-4 space-y-3">
+          <p className="text-sm text-[var(--app-text-muted)]">
+            Offline sync queue: <span className="font-black text-[var(--app-text)]">{queuedCount}</span> pending change{queuedCount === 1 ? '' : 's'}
           </p>
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleRetrySync}
-              disabled={isSyncing}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              aria-label="Retry sync"
-            >
+            <button onClick={handleRetrySync} disabled={isSyncing} className="app-button-primary px-4 text-white disabled:opacity-50" aria-label="Retry sync">
               {isSyncing ? 'Syncing...' : 'Retry Sync'}
             </button>
-            <button
-              onClick={handleForceRefresh}
-              disabled={isSyncing}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              aria-label="Force refresh from server"
-            >
+            <button onClick={handleForceRefresh} disabled={isSyncing} className="app-button-secondary px-4 disabled:opacity-50" aria-label="Force refresh from server">
               {isSyncing ? 'Refreshing...' : 'Refresh from Server'}
             </button>
-            <button
-              onClick={handleClearLocalCache}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
-              aria-label="Clear local cache"
-            >
+            <button onClick={handleClearLocalCache} className="app-button-secondary px-4" aria-label="Clear local cache">
               Clear Local Cache
             </button>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-500">
-            <strong>Retry Sync</strong> — pushes queued offline changes to the server.{' '}
-            <strong>Refresh from Server</strong> — replaces local data with a fresh copy from the cloud. Use if numbers don't match another device.
-          </p>
+          <div className="border border-dashed border-[var(--app-border-strong)] p-4 text-xs leading-6 uppercase tracking-[0.08em] text-[var(--app-text-muted)]">
+            Retry Sync pushes queued offline changes to the server. Refresh from Server replaces local data with a fresh cloud copy. Clear Local Cache should only be used when you are sure the server has the latest state.
+          </div>
         </div>
       </div>
     </div>

@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { formatCurrency, formatDate, getCategoryName, getCategoryIcon, getCategoryColor } from '../utils';
-import { useCategories } from '../contexts';
+import { formatCurrency, formatDate, getCategoryName, getCategoryIcon } from '../utils';
+import { useBudget, useCategories } from '../contexts';
 import type { Transaction } from '../types';
+import { CategoryIcon } from './CategoryIcon';
+import { getSourceMonogram } from '../lib/manga';
 
 interface TransactionRowProps {
   transaction: Transaction;
@@ -9,197 +11,96 @@ interface TransactionRowProps {
   onEdit: (transaction: Transaction) => void;
 }
 
-/**
- * TransactionRow component
- * Displays a single transaction with date, description, category, and amount
- * Includes edit and delete buttons with confirmation
- * Color-coded by transaction type (green for income, red for expense)
- * Shows category icon and color badge
- */
 export function TransactionRow({ transaction, onDelete, onEdit }: TransactionRowProps) {
   const { categories } = useCategories();
+  const { balanceSources } = useBudget();
   const [showConfirm, setShowConfirm] = useState(false);
 
   const categoryName = getCategoryName(transaction.category, categories);
   const categoryIcon = getCategoryIcon(transaction.category, categories);
-  const categoryColor = getCategoryColor(transaction.category, categories);
-
-  const handleDeleteClick = () => {
-    setShowConfirm(true);
-  };
+  const sourceName = balanceSources.find((s) => s.id === transaction.balanceSourceId)?.name ?? 'Unassigned';
+  const sourceMonogram = sourceName === 'Unassigned' ? '—' : getSourceMonogram(sourceName);
+  const syncLabel = transaction.__syncStatus && transaction.__syncStatus !== 'synced' ? transaction.__syncStatus : null;
 
   const handleConfirmDelete = () => {
     onDelete(transaction.id);
     setShowConfirm(false);
   };
 
-  const handleCancelDelete = () => {
-    setShowConfirm(false);
-  };
-
-  // Color classes based on transaction type
-  const amountColorClass =
-    transaction.type === 'income'
-      ? 'text-green-600 dark:text-green-400'
-      : 'text-red-600 dark:text-red-400';
-
   return (
-    <div className="p-3 sm:p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-all duration-200">
-      {/* Mobile layout: stacked */}
+    <div className="border-b border-[var(--app-border)] py-3 last:border-b-0">
       <div className="sm:hidden">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-              {transaction.description}
-            </p>
-            <div className="flex items-center gap-2 mt-1">
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: categoryColor }}
-                aria-label="Category color"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {categoryIcon} {categoryName}
-              </p>
-              {transaction.__syncStatus === 'queued' && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
-                  Queued
-                </span>
-              )}
+        <div className="grid grid-cols-[32px_minmax(0,1fr)] gap-x-3 gap-y-2">
+          <div className="row-span-2 flex h-8 w-8 items-center justify-center border border-[var(--app-border-strong)] text-[10px] font-black uppercase tracking-[0.08em]">{sourceMonogram}</div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--app-text-muted)]">
+              <span className="break-words">{sourceName}</span>
+              <span>•</span>
+              <span>{formatDate(transaction.date)}</span>
             </div>
           </div>
-          <div className={`text-sm font-semibold ${amountColorClass} flex-shrink-0 text-right`}>
-            {transaction.type === 'income' ? '+' : '-'}
-            {formatCurrency(transaction.amount)}
+          <div className="min-w-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="break-words text-sm font-semibold leading-5">{transaction.description || 'Untitled transaction'}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--app-text-muted)]">
+                  <CategoryIcon name={categoryName} icon={categoryIcon} className="h-4 w-4" />
+                  <span>{categoryName}</span>
+                  {syncLabel && <span className="app-stamp">{syncLabel}</span>}
+                </div>
+              </div>
+              <div className="shrink-0 pl-2 text-right">
+                <div className="app-numeric text-base font-black">{transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}</div>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex items-center justify-between mt-2">
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {formatDate(transaction.date)}
-          </div>
-          <div className="flex-shrink-0">
-            {!showConfirm ? (
-              <div className="flex gap-1">
-                <button
-                  onClick={() => onEdit(transaction)}
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
-                  aria-label="Edit transaction"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleDeleteClick}
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200"
-                  aria-label="Delete transaction"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleConfirmDelete}
-                  className="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors duration-200 min-h-[44px]"
-                  aria-label="Confirm delete"
-                >
-                  Delete
-                </button>
-                <button
-                  onClick={handleCancelDelete}
-                  className="px-3 py-1.5 text-sm bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-200 min-h-[44px]"
-                  aria-label="Cancel delete"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
+
+        <div className="mt-3 flex justify-end gap-2">
+          {!showConfirm ? (
+            <>
+              <button onClick={() => onEdit(transaction)} className="app-button-secondary px-3 text-xs">Edit</button>
+              <button onClick={() => setShowConfirm(true)} className="app-button-secondary px-3 text-xs">Delete</button>
+            </>
+          ) : (
+            <>
+              <button onClick={handleConfirmDelete} className="app-button-primary px-3 text-xs text-white">Confirm</button>
+              <button onClick={() => setShowConfirm(false)} className="app-button-secondary px-3 text-xs">Cancel</button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Desktop layout: single row */}
-      <div className="hidden sm:flex items-center justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-4">
-            {/* Date */}
-            <div className="text-sm text-gray-500 dark:text-gray-400 w-24 flex-shrink-0">
-              {formatDate(transaction.date)}
-            </div>
-
-            {/* Description and Category */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                {transaction.description}
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <span
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: categoryColor }}
-                  aria-label="Category color"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {categoryIcon} {categoryName}
-                </p>
-                {transaction.__syncStatus === 'queued' && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
-                    Queued
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Amount */}
-            <div className={`text-lg font-semibold ${amountColorClass} w-32 text-right flex-shrink-0`}>
-              {transaction.type === 'income' ? '+' : '-'}
-              {formatCurrency(transaction.amount)}
-            </div>
+      <div className="hidden sm:grid sm:grid-cols-[156px_minmax(0,1.3fr)_132px_120px_96px_auto] sm:items-center sm:gap-4">
+        <div className="min-w-0">
+          <div className="flex items-start gap-2">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-[var(--app-border-strong)] text-[10px] font-black uppercase tracking-[0.08em]">{sourceMonogram}</div>
+            <span className="break-words pt-2 text-xs font-black uppercase leading-4 tracking-[0.08em]">{sourceName}</span>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="ml-4 flex-shrink-0">
+        <div className="min-w-0">
+          <p className="break-words text-sm font-semibold leading-5">{transaction.description || 'Untitled transaction'}</p>
+          {syncLabel && <div className="app-stamp mt-1">{syncLabel}</div>}
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-[var(--app-text-muted)]">
+          <CategoryIcon name={categoryName} icon={categoryIcon} className="h-4.5 w-4.5 shrink-0" />
+          <span className="truncate">{categoryName}</span>
+        </div>
+        <div className="app-numeric text-right text-lg font-black">{transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}</div>
+        <div className="text-right text-xs font-black uppercase tracking-[0.08em] text-[var(--app-text-muted)]">{formatDate(transaction.date)}</div>
+        <div className="flex justify-end gap-2">
           {!showConfirm ? (
-            <div className="flex gap-2">
-              <button
-                onClick={() => onEdit(transaction)}
-                className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
-                aria-label="Edit transaction"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              <button
-                onClick={handleDeleteClick}
-                className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200"
-                aria-label="Delete transaction"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
+            <>
+              <button onClick={() => onEdit(transaction)} className="app-button-secondary px-3 text-xs">Edit</button>
+              <button onClick={() => setShowConfirm(true)} className="app-button-secondary px-3 text-xs">Delete</button>
+            </>
           ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={handleConfirmDelete}
-                className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors duration-200"
-                aria-label="Confirm delete"
-              >
-                Delete
-              </button>
-              <button
-                onClick={handleCancelDelete}
-                className="px-3 py-1 text-sm bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-200"
-                aria-label="Cancel delete"
-              >
-                Cancel
-              </button>
-            </div>
+            <>
+              <button onClick={handleConfirmDelete} className="app-button-primary px-3 text-xs text-white">Confirm</button>
+              <button onClick={() => setShowConfirm(false)} className="app-button-secondary px-3 text-xs">Cancel</button>
+            </>
           )}
         </div>
       </div>

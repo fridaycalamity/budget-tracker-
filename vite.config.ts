@@ -11,10 +11,10 @@ export default defineConfig({
       includeAssets: ['vite.svg', 'icons/*.png', 'icons/*.svg'],
       manifest: {
         name: 'Budget Tracker',
-        short_name: 'Budget',
-        description: 'Personal budget tracking app',
-        theme_color: '#1e40af',
-        background_color: '#ffffff',
+        short_name: 'Money Note',
+        description: 'Personal finance ledger',
+        theme_color: '#050505',
+        background_color: '#f4f1ea',
         display: 'standalone',
         start_url: '/',
         icons: [
@@ -38,6 +38,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
             // Cache Supabase API calls with NetworkFirst

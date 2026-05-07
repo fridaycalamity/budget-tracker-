@@ -1,31 +1,310 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Inter+Tight:wght@700;800;900&family=Knewave&family=Noto+Serif+JP:wght@700;900&display=swap');
 @import 'tailwindcss';
 
-/* Configure dark mode to use class strategy */
-@variant dark (&:where(.dark, .dark *));
+:root {
+  --color-black: #050505;
+  --color-ink: #111111;
+  --color-charcoal: #1a1a1a;
+  --color-dark-gray: #333333;
+  --color-mid-gray: #777777;
+  --color-light-gray: #d8d8d8;
+  --color-paper: #f4f1ea;
+  --color-white: #ffffff;
 
-/* Custom theme configuration */
-@theme {
-  --color-primary-50: #f0f9ff;
-  --color-primary-100: #e0f2fe;
-  --color-primary-200: #bae6fd;
-  --color-primary-300: #7dd3fc;
-  --color-primary-400: #38bdf8;
-  --color-primary-500: #0ea5e9;
-  --color-primary-600: #0284c7;
-  --color-primary-700: #0369a1;
-  --color-primary-800: #075985;
-  --color-primary-900: #0c4a6e;
+  --app-bg: var(--color-paper);
+  --app-surface: rgba(244, 241, 234, 0.96);
+  --app-surface-2: rgba(255, 255, 255, 0.56);
+  --app-text: var(--color-black);
+  --app-text-muted: var(--color-dark-gray);
+  --app-border: rgba(5, 5, 5, 0.18);
+  --app-border-strong: var(--color-black);
+  --app-accent: var(--color-black);
+  --app-accent-hover: var(--color-white);
+  --app-danger: var(--color-black);
+  --app-success: var(--color-black);
 
-  --color-income-light: #10b981;
-  --color-income: #059669;
-  --color-income-dark: #047857;
-
-  --color-expense-light: #ef4444;
-  --color-expense: #dc2626;
-  --color-expense-dark: #b91c1c;
+  --font-display: 'Knewave', 'Impact', fantasy;
+  --font-wordmark: 'Noto Serif JP', 'Inter Tight', serif;
+  --font-numeric: 'Inter Tight', 'Archivo Narrow', sans-serif;
+  --font-body: 'Inter', 'Noto Sans', system-ui, sans-serif;
 }
 
-/* Custom base styles */
+html {
+  background: var(--app-bg);
+}
+
 body {
-  @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors;
+  margin: 0;
+  background-color: var(--app-bg);
+  background-image:
+    url('/manga/paper-texture.png'),
+    radial-gradient(circle at top left, rgba(0, 0, 0, 0.05), transparent 35%);
+  background-blend-mode: multiply;
+  color: var(--app-text);
+  font-family: var(--font-body);
+  font-feature-settings: 'tnum' 1, 'ss01' 1;
+  text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.04), transparent 28%);
+  opacity: 0.9;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(5, 5, 5, 0.16);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@layer components {
+  .app-shell {
+    min-height: 100vh;
+    color: var(--app-text);
+  }
+
+  .app-main {
+    position: relative;
+    z-index: 1;
+  }
+
+  .app-page-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.15rem, 3vw, 3.4rem);
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+
+  .app-wordmark {
+    font-family: var(--font-wordmark);
+    font-weight: 900;
+    line-height: 0.86;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-feature-settings: 'palt' 1;
+  }
+
+  .app-brand-kicker {
+    font-size: 0.625rem;
+    font-weight: 900;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+  }
+
+  .app-section-title {
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    line-height: 0.96;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+  }
+
+  .app-kicker {
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--app-text-muted);
+  }
+
+  .app-numeric {
+    font-family: var(--font-numeric);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
+  }
+
+  .app-panel,
+  .app-panel-subtle,
+  .app-panel-dark {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--app-border-strong);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .app-panel {
+    background:
+      linear-gradient(rgba(244, 241, 234, 0.96), rgba(244, 241, 234, 0.96)),
+      url('/manga/paper-texture.png');
+    background-blend-mode: normal, multiply;
+  }
+
+  .app-panel-subtle {
+    background:
+      linear-gradient(rgba(244, 241, 234, 0.86), rgba(244, 241, 234, 0.86)),
+      url('/manga/paper-texture.png');
+    background-blend-mode: normal, multiply;
+  }
+
+  .app-panel-dark {
+    color: var(--color-white);
+    background:
+      linear-gradient(rgba(5, 5, 5, 0.97), rgba(5, 5, 5, 0.97)),
+      url('/manga/black-paper-texture.png');
+    background-blend-mode: normal, soft-light;
+  }
+
+  .app-divider {
+    border-color: var(--app-border);
+  }
+
+  .app-input {
+    min-height: 44px;
+    border: 1px solid var(--app-border-strong);
+    border-radius: 0;
+    background: rgba(244, 241, 234, 0.92);
+    color: var(--app-text);
+  }
+
+  .app-input::placeholder {
+    color: var(--color-mid-gray);
+  }
+
+  .app-input:focus {
+    outline: 2px solid var(--app-border-strong);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .app-button-primary,
+  .app-button-secondary,
+  .app-button-ghost {
+    min-height: 44px;
+    border-radius: 0;
+    font-weight: 800;
+    text-transform: uppercase;
+    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  }
+
+  .app-button-primary {
+    background: var(--color-black);
+    color: var(--color-white);
+    border: 1px solid var(--color-black);
+  }
+
+  .app-button-primary:hover {
+    background: var(--color-white);
+    color: var(--color-black);
+  }
+
+  .app-button-secondary {
+    background: transparent;
+    color: var(--app-text);
+    border: 1px solid var(--app-border-strong);
+  }
+
+  .app-button-secondary:hover,
+  .app-button-ghost:hover {
+    background: var(--color-black);
+    color: var(--color-white);
+  }
+
+  .app-button-ghost {
+    background: transparent;
+    color: var(--app-text-muted);
+    border: 1px solid transparent;
+  }
+
+  .app-stamp {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    padding: 2px 8px;
+    border: 1px solid var(--app-border-strong);
+    font-size: 0.58rem;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.45);
+  }
+
+  .app-brush-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+  }
+
+  .app-brush-link:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 5px;
+  }
+
+  .ink-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('/manga/ink-wash-texture.png');
+    background-position: center;
+    background-size: cover;
+    opacity: 0.12;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+
+  .bottom-nav-safe {
+    padding-bottom: 5.75rem;
+  }
+
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .splash-katana-spin {
+    animation: splash-katana-spin 1.8s linear infinite;
+    transform-origin: center;
+  }
+
+  .dashboard-insight-fade {
+    animation: dashboard-insight-fade 420ms ease-out both;
+  }
+}
+
+@keyframes splash-katana-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dashboard-insight-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

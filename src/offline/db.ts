@@ -1,4 +1,4 @@
-import type { Transaction } from '../types';
+import type { Transaction, BalanceSource, Subscription, SubscriptionPayment } from '../types';
 import type { OutboxItem } from './outbox';
 
 const DB_NAME = 'budget-tracker-offline-db';
@@ -6,7 +6,7 @@ const DB_VERSION = 1;
 const STORE_NAME = 'offline_kv';
 const FALLBACK_PREFIX = 'budget_tracker_offline_';
 
-type PersistedValue = Transaction[] | OutboxItem[];
+type PersistedValue = Transaction[] | BalanceSource[] | Subscription[] | SubscriptionPayment[] | OutboxItem[];
 
 function isIndexedDbAvailable(): boolean {
   return typeof indexedDB !== 'undefined';
@@ -154,6 +154,18 @@ function userOutboxKey(userId: string): string {
   return `outbox:${userId}`;
 }
 
+function userBalanceSourcesKey(userId: string): string {
+  return `balance_sources:${userId}`;
+}
+
+function userSubscriptionsKey(userId: string): string {
+  return `subscriptions:${userId}`;
+}
+
+function userSubscriptionPaymentsKey(userId: string): string {
+  return `subscription_payments:${userId}`;
+}
+
 export const offlineDb = {
   async getTransactions(userId: string): Promise<Transaction[]> {
     const data = await getJson<Transaction[]>(userTransactionsKey(userId));
@@ -173,10 +185,40 @@ export const offlineDb = {
     await setJson(userOutboxKey(userId), items);
   },
 
+  async getBalanceSources(userId: string): Promise<BalanceSource[]> {
+    const data = await getJson<BalanceSource[]>(userBalanceSourcesKey(userId));
+    return data ?? [];
+  },
+
+  async setBalanceSources(userId: string, items: BalanceSource[]): Promise<void> {
+    await setJson(userBalanceSourcesKey(userId), items);
+  },
+
+  async getSubscriptions(userId: string): Promise<Subscription[]> {
+    const data = await getJson<Subscription[]>(userSubscriptionsKey(userId));
+    return data ?? [];
+  },
+
+  async setSubscriptions(userId: string, items: Subscription[]): Promise<void> {
+    await setJson(userSubscriptionsKey(userId), items);
+  },
+
+  async getSubscriptionPayments(userId: string): Promise<SubscriptionPayment[]> {
+    const data = await getJson<SubscriptionPayment[]>(userSubscriptionPaymentsKey(userId));
+    return data ?? [];
+  },
+
+  async setSubscriptionPayments(userId: string, items: SubscriptionPayment[]): Promise<void> {
+    await setJson(userSubscriptionPaymentsKey(userId), items);
+  },
+
   async clearUserData(userId: string): Promise<void> {
     await Promise.all([
       deleteJson(userTransactionsKey(userId)),
       deleteJson(userOutboxKey(userId)),
+      deleteJson(userBalanceSourcesKey(userId)),
+      deleteJson(userSubscriptionsKey(userId)),
+      deleteJson(userSubscriptionPaymentsKey(userId)),
     ]);
   },
 };

@@ -6,59 +6,34 @@ interface ToastProps {
   onRemove: (id: string) => void;
 }
 
-/**
- * Toast component
- * Displays a temporary notification message with smooth animations
- */
 export function Toast({ toast, onRemove }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false);
 
-  // Trigger enter animation on mount
   useEffect(() => {
-    // Small delay to ensure CSS transition works
     const timer = setTimeout(() => setIsVisible(true), 10);
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle close button click
   const handleClose = () => {
     setIsVisible(false);
-    // Wait for exit animation before removing
     setTimeout(() => onRemove(toast.id), 300);
   };
 
-  // Determine colors based on toast type
-  const bgColor = toast.type === 'success' 
-    ? 'bg-green-500 dark:bg-green-600' 
-    : 'bg-red-500 dark:bg-red-600';
-  
+  const toneClass = toast.type === 'success' ? 'bg-green-500' : 'bg-red-500';
   const icon = toast.type === 'success' ? '✓' : '✕';
 
   return (
     <div
-      className={`
-        flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white
-        transition-all duration-300 ease-in-out
-        ${bgColor}
-        ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'}
-      `}
+      className={`app-panel-dark ${toneClass} flex items-start gap-3 px-4 py-3 transition-all duration-300 ease-in-out ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'}`}
       role="alert"
       aria-live="polite"
     >
-      {/* Icon */}
-      <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-white bg-opacity-20 font-bold">
-        {icon}
+      <div className="app-stamp bg-white text-black">{icon}</div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-white/70">Notification</p>
+        <p className="mt-1 text-sm text-white">{toast.message}</p>
       </div>
-
-      {/* Message */}
-      <p className="flex-1 text-sm font-medium">{toast.message}</p>
-
-      {/* Close button */}
-      <button
-        onClick={handleClose}
-        className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-white hover:bg-opacity-20 transition-colors"
-        aria-label="Close notification"
-      >
+      <button onClick={handleClose} className="inline-flex h-10 w-10 items-center justify-center border border-white/20" aria-label="Close notification">
         ×
       </button>
     </div>

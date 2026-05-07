@@ -2,23 +2,6 @@ import { useEffect, useRef } from 'react';
 import { TransactionForm } from './TransactionForm';
 import type { Transaction } from '../types';
 
-/**
- * TransactionModal component
- * Modal dialog for adding or editing transactions
- * 
- * Features:
- * - Modal overlay with backdrop
- * - Includes TransactionForm
- * - Close button and backdrop click to close
- * - Smooth open/close animations
- * - Focus trap for accessibility
- * - Escape key to close
- * - Prevents body scroll when open
- * - Supports both add and edit modes
- * 
- * Requirements: 12.1, 12.2, 7.4, 7.5
- */
-
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,56 +12,23 @@ export function TransactionModal({ isOpen, onClose, editTransaction }: Transacti
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
-  /**
-   * Handle successful transaction submission
-   * Closes the modal after transaction is added
-   */
-  const handleSuccess = () => {
-    onClose();
-  };
+  const handleSuccess = () => onClose();
 
-  /**
-   * Handle backdrop click
-   * Closes modal when clicking outside the modal content
-   */
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  /**
-   * Handle escape key press
-   * Closes modal when Escape key is pressed
-   */
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
+      if (e.key === 'Escape' && isOpen) onClose();
     };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
+    if (isOpen) document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  /**
-   * Prevent body scroll when modal is open
-   */
   useEffect(() => {
     if (isOpen) {
-      // Save current scroll position
       const scrollY = window.scrollY;
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = '100%';
     } else {
-      // Restore scroll position
       const scrollY = document.body.style.top;
       document.body.style.position = '';
       document.body.style.top = '';
@@ -93,128 +43,57 @@ export function TransactionModal({ isOpen, onClose, editTransaction }: Transacti
     };
   }, [isOpen]);
 
-  /**
-   * Focus trap implementation
-   * Keeps focus within modal when open
-   */
   useEffect(() => {
     if (!isOpen) return;
-
-    // Save the currently focused element
     previousActiveElement.current = document.activeElement as HTMLElement;
 
-    // Get all focusable elements within the modal
     const getFocusableElements = (): HTMLElement[] => {
       if (!modalRef.current) return [];
-
-      const focusableSelectors = [
-        'a[href]',
-        'button:not([disabled])',
-        'textarea:not([disabled])',
-        'input:not([disabled])',
-        'select:not([disabled])',
-        '[tabindex]:not([tabindex="-1"])',
-      ];
-
-      const elements = modalRef.current.querySelectorAll<HTMLElement>(
-        focusableSelectors.join(',')
-      );
-
+      const elements = modalRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])');
       return Array.from(elements);
     };
 
-    // Focus the first focusable element
     const focusableElements = getFocusableElements();
-    if (focusableElements.length > 0) {
-      focusableElements[0].focus();
-    }
+    focusableElements[0]?.focus();
 
-    // Handle tab key to trap focus
     const handleTab = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;
-
-      const focusableElements = getFocusableElements();
-      if (focusableElements.length === 0) return;
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (e.shiftKey) {
-        // Shift + Tab
-        if (document.activeElement === firstElement) {
-          e.preventDefault();
-          lastElement.focus();
-        }
-      } else {
-        // Tab
-        if (document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement.focus();
-        }
+      const focusable = getFocusableElements();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     };
 
     document.addEventListener('keydown', handleTab);
-
-    // Restore focus when modal closes
     return () => {
       document.removeEventListener('keydown', handleTab);
-      if (previousActiveElement.current) {
-        previousActiveElement.current.focus();
-      }
+      previousActiveElement.current?.focus();
     };
   }, [isOpen]);
 
-  // Don't render if not open
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 animate-fadeIn"
-      onClick={handleBackdropClick}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-
-      {/* Modal Content */}
-      <div
-        ref={modalRef}
-        className="relative bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] overflow-y-auto animate-slideUp"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2
-            id="modal-title"
-            className="text-xl font-semibold text-gray-900 dark:text-white"
-          >
-            {editTransaction ? 'Edit Transaction' : 'Add Transaction'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            aria-label="Close modal"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+    <div className="fixed inset-0 z-50 flex items-end justify-center animate-fadeIn sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]" />
+      <div ref={modalRef} className="relative flex h-full w-full flex-col app-panel animate-slideUp sm:h-auto sm:max-h-[92vh] sm:max-w-xl">
+        <div className="flex items-start justify-between gap-4 border-b app-divider px-5 py-4 sm:px-6">
+          <div>
+            <div className="app-kicker mb-2">Ledger Entry</div>
+            <h2 id="modal-title" className="app-section-title text-xl">{editTransaction ? 'Edit Transaction' : 'Add Transaction'}</h2>
+          </div>
+          <button onClick={onClose} className="app-button-ghost inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-3" aria-label="Close modal">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
-
-        {/* Form Content */}
-        <div className="p-4 sm:p-6">
+        <div className="overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
           <TransactionForm onSuccess={handleSuccess} editTransaction={editTransaction} />
         </div>
       </div>
