@@ -1,4 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="80" fill="#1e40af"/>
-  <text x="256" y="320" font-family="Arial, sans-serif" font-size="260" font-weight="bold" fill="white" text-anchor="middle">₱</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="RONIN app icon">
+  <rect width="512" height="512" rx="108" fill="#050505"/>
+  <circle cx="256" cy="256" r="166" fill="#f4f1ea"/>
+  <path d="M128 315c45-24 80-35 128-35s83 11 128 35" fill="none" stroke="#050505" stroke-width="24" stroke-linecap="round"/>
+  <path d="M165 242c19-59 51-94 91-94s72 35 91 94" fill="none" stroke="#050505" stroke-width="27" stroke-linecap="round"/>
+  <path d="M176 242h160" stroke="#050505" stroke-width="24" stroke-linecap="round"/>
+  <path d="M205 315v-61M307 315v-61" stroke="#050505" stroke-width="21" stroke-linecap="round"/>
+  <path d="M352 141 152 341" stroke="#050505" stroke-width="19" stroke-linecap="round"/>
+  <path d="M328 125l43 43" stroke="#050505" stroke-width="17" stroke-linecap="round"/>
 </svg>
