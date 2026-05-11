@@ -51,7 +51,6 @@ function AppRoutes() {
               </main>
               <AddTransactionButton />
               <ToastContainer />
-              <InstallPWA />
             </div>
           </ProtectedRoute>
         }
@@ -69,6 +68,7 @@ function App() {
             <CategoryProvider>
               <BudgetProvider>
                 <AppRoutes />
+                <InstallPWA />
               </BudgetProvider>
             </CategoryProvider>
           </ToastProvider>
