@@ -56,7 +56,7 @@ export function CategoryManager() {
           const transactionCount = countTransactionsByCategory(transactions, category.id);
 
           return (
-            <div key={category.id} className="app-panel-subtle grid grid-cols-[auto_1fr_auto] items-center gap-4 p-4">
+            <div key={category.id} className="app-panel-subtle grid grid-cols-[auto_1fr] items-center gap-3 p-4 sm:grid-cols-[auto_1fr_auto] sm:gap-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center border border-[var(--app-border-strong)]">
                   <CategoryIcon name={category.name} icon={category.icon} className="h-6 w-6" />
@@ -75,9 +75,9 @@ export function CategoryManager() {
               </div>
 
               {!isDefault && (
-                <div className="flex flex-wrap justify-end gap-2">
-                  <button onClick={() => { setEditingCategory(category); setIsFormOpen(true); }} className="app-button-secondary px-3 text-xs" aria-label={`Edit ${category.name} category`}>Edit</button>
-                  <button onClick={() => setDeletingCategory(category)} className="app-button-secondary px-3 text-xs" aria-label={`Delete ${category.name} category`}>Delete</button>
+                <div className="col-span-2 grid grid-cols-2 gap-2 pt-1 sm:col-span-1 sm:flex sm:justify-end sm:pt-0">
+                  <button onClick={() => { setEditingCategory(category); setIsFormOpen(true); }} className="app-button-secondary min-h-[44px] px-3 text-xs sm:min-h-0" aria-label={`Edit ${category.name} category`}>Edit</button>
+                  <button onClick={() => setDeletingCategory(category)} className="app-button-secondary min-h-[44px] px-3 text-xs sm:min-h-0" aria-label={`Delete ${category.name} category`}>Delete</button>
                 </div>
               )}
             </div>
