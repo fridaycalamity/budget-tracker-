@@ -36,25 +36,29 @@ export function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [isIosInstallGuide, setIsIosInstallGuide] = useState(false);
+  const [canShowInstallLauncher, setCanShowInstallLauncher] = useState(false);
 
   useEffect(() => {
-    if (isStandaloneApp() || isTemporarilyDismissed()) return;
+    if (isStandaloneApp()) return;
 
     if (isIosDevice()) {
       setIsIosInstallGuide(true);
-      setShowBanner(true);
+      setCanShowInstallLauncher(true);
+      setShowBanner(!isTemporarilyDismissed());
     }
 
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsIosInstallGuide(false);
-      setShowBanner(true);
+      setCanShowInstallLauncher(true);
+      if (!isTemporarilyDismissed()) setShowBanner(true);
     };
 
     const handleInstalled = () => {
       setShowBanner(false);
       setDeferredPrompt(null);
+      setCanShowInstallLauncher(false);
     };
 
     window.addEventListener('beforeinstallprompt', handler);
@@ -79,7 +83,23 @@ export function InstallPWA() {
     localStorage.setItem(DISMISSED_KEY, String(Date.now() + DISMISS_DURATION_MS));
   };
 
-  if (!showBanner) return null;
+  if (!showBanner) {
+    if (!canShowInstallLauncher) return null;
+
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          if (!deferredPrompt) setIsIosInstallGuide(true);
+          setShowBanner(true);
+        }}
+        className="fixed bottom-24 right-3 z-50 min-h-[42px] border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 text-[11px] font-black uppercase tracking-[0.16em] text-[var(--app-text)] shadow-[0_12px_28px_rgba(0,0,0,0.18)] lg:bottom-6"
+        aria-label="Show app install instructions"
+      >
+        Install App
+      </button>
+    );
+  }
 
   return (
     <div className="fixed inset-x-3 bottom-24 z-50 lg:inset-x-auto lg:bottom-6 lg:right-6 lg:w-[380px]">
