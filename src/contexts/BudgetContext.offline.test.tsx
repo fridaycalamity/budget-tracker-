@@ -62,6 +62,15 @@ vi.mock('../lib/supabase', () => ({
           return { data: null, error: null };
         },
         upsert: (payload: ServerRow) => {
+          if (!navigator.onLine) {
+            return {
+              error: new Error('Network request failed'),
+              select: () => ({
+                single: async () => ({ data: null, error: new Error('Network request failed') }),
+              }),
+            };
+          }
+
           if (table === 'transactions') {
             const index = serverTransactions.findIndex((row) => row.id === payload.id);
             if (index >= 0) serverTransactions[index] = payload;

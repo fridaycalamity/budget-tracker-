@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react';
 
 const LOGIN_SPLASH_DELAY_MS = 2200;
+
+function isGoogleOAuthBlockedBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+
+  const userAgent = navigator.userAgent || '';
+  return /FBAN|FBAV|FBIOS|FB_IAB|Messenger|Instagram|Line\/|MicroMessenger/i.test(userAgent);
+}
+
+function getCurrentAppUrl(): string {
+  if (typeof window === 'undefined') return '';
+  return window.location.href;
+}
+
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { mangaAssets } from '../lib/manga';
@@ -18,6 +31,8 @@ export function Auth() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [showLoginSplash, setShowLoginSplash] = useState(false);
   const [canRedirectAfterLogin, setCanRedirectAfterLogin] = useState(false);
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
+  const isOAuthBlockedBrowser = isGoogleOAuthBlockedBrowser();
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -81,9 +96,25 @@ export function Auth() {
 
   const handleGoogleSignIn = async () => {
     setError(null);
+    setCopyMessage(null);
     if (isOffline) return setError('Connect to internet to sign in.');
+    if (isOAuthBlockedBrowser) {
+      return setError('Google blocks sign-in inside Messenger, Facebook, Instagram, and other in-app browsers. Open RONIN in Safari or your installed home-screen app, then continue with Google.');
+    }
     const { error: googleError } = await signInWithGoogle();
     if (googleError) setError(googleError);
+  };
+
+  const handleCopyAppLink = async () => {
+    const appUrl = getCurrentAppUrl();
+    setCopyMessage(null);
+
+    try {
+      await navigator.clipboard.writeText(appUrl);
+      setCopyMessage('App link copied. Open Safari and paste it there to use Google sign-in.');
+    } catch {
+      setCopyMessage(`Open this link in Safari: ${appUrl}`);
+    }
   };
 
   if (loading) {
@@ -140,10 +171,27 @@ export function Auth() {
                 </div>
               )}
 
+              {isOAuthBlockedBrowser && (
+                <div className="border border-white/18 bg-black/42 px-4 py-3 text-sm text-white">
+                  <div className="font-black uppercase tracking-[0.12em]">Open In Safari</div>
+                  <p className="mt-2 text-white/72">
+                    Google sign-in is blocked inside Messenger and other in-app browsers on iPhone. Open RONIN in Safari or from your home screen, then continue with Google.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleCopyAppLink}
+                    className="mt-3 min-h-[40px] border border-white/50 px-3 text-xs font-black uppercase tracking-[0.14em] text-white transition hover:bg-white hover:text-black"
+                  >
+                    Copy App Link
+                  </button>
+                  {copyMessage && <p className="mt-2 text-xs leading-5 text-white/64">{copyMessage}</p>}
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                disabled={isOffline}
+                disabled={isOffline || isOAuthBlockedBrowser}
                 className="flex min-h-[44px] w-full items-center justify-center gap-3 border border-white bg-white px-4 text-sm font-extrabold uppercase tracking-[0.12em] text-black transition hover:bg-transparent hover:text-white disabled:opacity-50"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">

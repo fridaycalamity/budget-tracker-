@@ -26,6 +26,13 @@ type TransactionWindow = (typeof TRANSACTION_WINDOWS)[number]['value'];
 
 type PageSize = 25 | 50;
 
+function formatLocalDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function TransactionList() {
   const { transactions, deleteTransaction } = useBudget();
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -54,7 +61,7 @@ export function TransactionList() {
     if (transactionWindow === 'all') return transactions;
 
     const today = new Date();
-    const todayKey = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString().slice(0, 10);
+    const todayKey = formatLocalDateKey(today);
 
     if (transactionWindow === 'daily') {
       return transactions.filter((transaction) => transaction.date === todayKey);
@@ -67,7 +74,7 @@ export function TransactionList() {
 
     const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     weekStart.setDate(weekStart.getDate() - 6);
-    const weekStartKey = weekStart.toISOString().slice(0, 10);
+    const weekStartKey = formatLocalDateKey(weekStart);
 
     return transactions.filter((transaction) => transaction.date >= weekStartKey && transaction.date <= todayKey);
   }, [transactions, transactionWindow]);

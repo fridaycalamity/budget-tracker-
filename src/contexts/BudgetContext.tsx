@@ -69,6 +69,39 @@ function toServerTransaction(transaction: Transaction, userId: string) {
   };
 }
 
+function toLegacyServerTransaction(transaction: Transaction, userId: string) {
+  const { balance_source_id: _balanceSourceId, ...row } = toServerTransaction(transaction, userId);
+  return row;
+}
+
+function isMissingBalanceSourceColumnError(error: unknown): boolean {
+  const message = typeof error === 'object' && error !== null
+    ? JSON.stringify(error).toLowerCase()
+    : String(error).toLowerCase();
+
+  return message.includes('balance_source_id') && (
+    message.includes('column') ||
+    message.includes('schema cache') ||
+    message.includes('could not find') ||
+    message.includes('pgrst204')
+  );
+}
+
+async function upsertServerTransaction(transaction: Transaction, userId: string) {
+  const write = async (row: ReturnType<typeof toServerTransaction> | ReturnType<typeof toLegacyServerTransaction>) => {
+    return supabase
+      .from('transactions')
+      .upsert(row, { onConflict: 'id' })
+      .select()
+      .single();
+  };
+
+  const result = await write(toServerTransaction(transaction, userId));
+  if (!result.error || !isMissingBalanceSourceColumnError(result.error)) return result;
+
+  return write(toLegacyServerTransaction(transaction, userId));
+}
+
 function mapDbToBalanceSource(row: Record<string, unknown>): BalanceSource {
   return {
     id: row.id as string,
@@ -242,12 +275,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
         updatedAt: nowIso,
       };
 
-      // Save to Supabase
-      const { data, error } = await supabase
-        .from('transactions')
-        .upsert(toServerTransaction(txn, userId), { onConflict: 'id' })
-        .select()
-        .single();
+      // Save to Supabase. Retry without balance_source_id for older production schemas.
+      const { data, error } = await upsertServerTransaction(txn, userId);
 
       if (error) {
         console.error('Failed to generate subscription transaction:', error);
@@ -773,26 +802,16 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     if (user) {
       const optimisticTransaction: Transaction = {
         ...newTransaction,
-        __syncStatus: navigator.onLine ? 'syncing' : 'queued',
-        __localOnly: !navigator.onLine,
+        __syncStatus: 'syncing',
+        __localOnly: false,
       };
 
       const optimistic = [optimisticTransaction, ...transactions];
       setTransactions(optimistic);
       await persistUserTransactions(user.id, optimistic);
 
-      if (!navigator.onLine) {
-        await queueMutation('transaction.create', newTransaction.id, newTransaction);
-        showToast('Offline: transaction queued for sync.', 'success');
-        return;
-      }
-
       try {
-        const { data, error } = await supabase
-          .from('transactions')
-          .upsert(toServerTransaction(newTransaction, user.id), { onConflict: 'id' })
-          .select()
-          .single();
+        const { data, error } = await upsertServerTransaction(newTransaction, user.id);
 
         if (error) throw error;
 
@@ -812,7 +831,7 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
         setTransactions(queued);
         await persistUserTransactions(user.id, queued);
         await queueMutation('transaction.create', newTransaction.id, newTransaction);
-        showToast('Offline: transaction queued for sync.', 'success');
+        showToast(isNetworkError(error) ? 'Offline: transaction queued for sync.' : 'Transaction saved locally. Sync pending.', 'success');
       }
       return;
     }
@@ -846,8 +865,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
       id: existingTransaction.id,
       createdAt: existingTransaction.createdAt,
       updatedAt: new Date().toISOString(),
-      __syncStatus: navigator.onLine ? 'syncing' : 'queued',
-      __localOnly: !navigator.onLine,
+      __syncStatus: 'syncing',
+      __localOnly: false,
     };
 
     if (user) {
@@ -855,18 +874,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
       setTransactions(optimistic);
       await persistUserTransactions(user.id, optimistic);
 
-      if (!navigator.onLine) {
-        await queueMutation('transaction.update', id, updatedTransaction);
-        showToast('Offline: update queued for sync.', 'success');
-        return;
-      }
-
       try {
-        const { data, error } = await supabase
-          .from('transactions')
-          .upsert(toServerTransaction(updatedTransaction, user.id), { onConflict: 'id' })
-          .select()
-          .single();
+        const { data, error } = await upsertServerTransaction(updatedTransaction, user.id);
 
         if (error) throw error;
 
@@ -882,7 +891,7 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
         setTransactions(queued);
         await persistUserTransactions(user.id, queued);
         await queueMutation('transaction.update', id, updatedTransaction);
-        showToast('Offline: update queued for sync.', 'success');
+        showToast(isNetworkError(error) ? 'Offline: update queued for sync.' : 'Update saved locally. Sync pending.', 'success');
       }
       return;
     }
