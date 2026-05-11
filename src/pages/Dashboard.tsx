@@ -287,6 +287,13 @@ export function Dashboard() {
       .slice(0, 5);
   }, [activeSummary.expensesByCategory, activeSummary.totalExpenses, categories]);
 
+  const todayExpense = useMemo(() => {
+    const todayKey = format(new Date(), 'yyyy-MM-dd');
+    return transactions
+      .filter((transaction) => transaction.type === 'expense' && transaction.date === todayKey)
+      .reduce((total, transaction) => total + transaction.amount, 0);
+  }, [transactions]);
+
   const expenseInsight = useMemo(() => {
     const top = expenseBreakdown[0];
     if (!top) return null;
@@ -448,6 +455,10 @@ export function Dashboard() {
             <p className="app-section-title text-lg">Total Expenses</p>
             <p className="app-numeric mt-4 text-4xl leading-none sm:text-5xl">{formatCurrency(activeSummary.totalExpenses)}</p>
             <p className="mt-2 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--app-text-muted)]">This {viewMode === 'month' ? 'Month' : 'Ledger'}</p>
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--app-border)] pt-3 text-[11px] font-black uppercase tracking-[0.14em] text-[var(--app-text-muted)]">
+              <span>Daily Expense</span>
+              <span className="app-numeric text-base leading-none text-[var(--app-text)] sm:text-lg">{formatCurrency(todayExpense)}</span>
+            </div>
           </div>
           <div className="pointer-events-none absolute inset-0 bg-right-center bg-cover bg-no-repeat opacity-[0.15] mix-blend-multiply" style={{ backgroundImage: `url(${mangaAssets.inkMountains})` }} />
         </div>
